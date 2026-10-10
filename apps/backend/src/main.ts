@@ -27,6 +27,8 @@ async function bootstrap() {
       'http://localhost:3001',
       'https://atbltd.health',
       'https://www.atbltd.health',
+      'https://stbltd.com',
+      'https://www.stbltd.com',
       'https://api.atbltd.health',
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
