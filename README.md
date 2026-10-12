@@ -114,6 +114,11 @@ cd atbltd-health
 npm ci  # Installs both workspaces from the root lockfile
 ```
 
+Backend and frontend direct dependencies are declared in
+`apps/backend/package.json` and `apps/frontend/package.json`; the root
+`package.json` contains repository-level scripts and tooling. The committed
+root lockfile resolves all workspaces.
+
 ### 3. Configure Environment Variables
 
 ```bash
@@ -129,6 +134,12 @@ cd ../..
 
 Reference `apps/backend/.env.example` and `apps/frontend/.env.example` for the
 complete list of variables.
+
+Check workspace dependency advisories with:
+
+```bash
+npm audit --workspaces --audit-level=high
+```
 
 ### 4. Set up the Database
 
