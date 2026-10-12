@@ -299,4 +299,4 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 
-Proprietary — Astha Treatment Bills Ltd. All rights reserved.
+Proprietary — Sustho Thaki BD Ltd. All rights reserved.

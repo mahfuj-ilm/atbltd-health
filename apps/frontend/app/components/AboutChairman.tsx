@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { Award, Briefcase, GraduationCap, Building2 } from "lucide-react";
-import SectionHeading from "./SectionHeading";
+import Image from 'next/image';
+import { motion } from 'framer-motion';
+import { Award, Briefcase, GraduationCap, Building2 } from 'lucide-react';
+import SectionHeading from './SectionHeading';
 
 interface AboutChairmanProps {
   strings: {
@@ -46,17 +46,9 @@ export default function AboutChairman({ strings }: AboutChairmanProps) {
     { icon: Building2, text: strings.roles.advisor2 },
   ];
 
-  const career = [
-    strings.roles.career1,
-    strings.roles.career2,
-    strings.roles.career3,
-  ];
+  const career = [strings.roles.career1, strings.roles.career2, strings.roles.career3];
 
-  const education = [
-    strings.roles.education1,
-    strings.roles.education2,
-    strings.roles.education3,
-  ];
+  const education = [strings.roles.education1, strings.roles.education2, strings.roles.education3];
 
   return (
     <section id="about-chairman" className="section-space">
@@ -86,12 +78,8 @@ export default function AboutChairman({ strings }: AboutChairmanProps) {
               />
             </div>
             <div className="absolute bottom-4 left-4 right-4 bg-black/50 backdrop-blur-md rounded-xl p-4">
-              <p className="text-white font-bold text-lg">
-                এ.কে.এম মশিউর রহমান
-              </p>
-              <p className="text-red-300 text-sm">
-                চেয়ারম্যান, আস্থা ট্রিটমেন্ট বিলস লিমিটেড
-              </p>
+              <p className="text-white font-bold text-lg">এ.কে.এম মশিউর রহমান</p>
+              <p className="text-red-300 text-sm">চেয়ারম্যান, Sustho Thaki BD Ltd</p>
             </div>
           </motion.div>
 
@@ -112,10 +100,7 @@ export default function AboutChairman({ strings }: AboutChairmanProps) {
               <div className="space-y-3">
                 {currentRoles.map((role, i) => (
                   <div key={i} className="flex items-start gap-3">
-                    <role.icon
-                      size={16}
-                      className="text-red-400 mt-0.5 shrink-0"
-                    />
+                    <role.icon size={16} className="text-red-400 mt-0.5 shrink-0" />
                     <p className="text-white/80 text-sm">{role.text}</p>
                   </div>
                 ))}
@@ -130,10 +115,7 @@ export default function AboutChairman({ strings }: AboutChairmanProps) {
               </h3>
               <ul className="space-y-2">
                 {career.map((item, i) => (
-                  <li
-                    key={i}
-                    className="text-white/80 text-sm flex items-start gap-2"
-                  >
+                  <li key={i} className="text-white/80 text-sm flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
                     {item}
                   </li>
@@ -149,10 +131,7 @@ export default function AboutChairman({ strings }: AboutChairmanProps) {
               </h3>
               <ul className="space-y-2">
                 {education.map((item, i) => (
-                  <li
-                    key={i}
-                    className="text-white/80 text-sm flex items-start gap-2"
-                  >
+                  <li key={i} className="text-white/80 text-sm flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 shrink-0" />
                     {item}
                   </li>
