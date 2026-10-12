@@ -1,4 +1,4 @@
-# Fresh-checkout verification
+# Repository fresh-checkout verification
 
 Verified on 2026-10-13 from a tracked-files-only archive of commit
 `bee4b18ea748166c2ad1c37670fb82fd32748e89`. The archive had no local `.env`,
