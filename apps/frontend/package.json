@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "tsc --noEmit",
+    "lint": "eslint .",
     "format": "prettier --write \"app/**/*.{ts,tsx}\"",
     "test": "jest",
     "test:watch": "jest --watch",
