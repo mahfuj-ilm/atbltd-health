@@ -1,0 +1,26 @@
+# Default owner for everything in the repo
+
+-                       @rehmanshawon
+
+# Backend ownership
+
+/apps/backend/ @rehmanshawon
+/apps/backend/src/modules/auth/ @rehmanshawon
+/apps/backend/src/modules/claim/ @rehmanshawon
+
+# Frontend ownership
+
+/apps/frontend/ @rehmanshawon
+
+# CI/CD and infra
+
+/.github/ @rehmanshawon
+/Dockerfile @rehmanshawon
+/base.Dockerfile @rehmanshawon
+/docker-compose*.yml @rehmanshawon
+
+# Docs
+
+/README.md @rehmanshawon
+/CONTRIBUTING.md @rehmanshawon
+/SECURITY.md @rehmanshawon
