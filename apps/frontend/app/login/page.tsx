@@ -11,7 +11,6 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 export default function LoginPage() {
   const router = useRouter();
   const {
-    login,
     memberLogin,
     isAuthenticated,
     user,

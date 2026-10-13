@@ -8,7 +8,6 @@ import {
   CreditCard,
   Calendar,
   Shield,
-  Clock,
   Copy,
   CheckCircle2,
   Loader2,

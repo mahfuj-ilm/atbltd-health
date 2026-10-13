@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth-context";
 import { adminApi } from "../../lib/api";
-import { Banknote, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Banknote, Loader2 } from "lucide-react";
 import AdminTable from "../components/AdminTable";
 
 interface Payment {

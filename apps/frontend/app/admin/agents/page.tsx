@@ -98,13 +98,6 @@ export default function AgentsPage() {
 
   const formatCurrency = (amount: number) => `${amount?.toLocaleString() || 0} BDT`;
 
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">

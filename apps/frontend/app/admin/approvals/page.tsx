@@ -24,7 +24,6 @@ interface PendingAgent {
 export default function ApprovalsPage() {
   const { token, user } = useAuth();
   const isSuperAdmin = user?.role === 'super_admin';
-  const isAdmin = user?.role === 'admin';
   const [pendingCreates, setPendingCreates] = useState<PendingAgent[]>([]);
   const [pendingDeactivations, setPendingDeactivations] = useState<PendingAgent[]>([]);
   const [isLoading, setIsLoading] = useState(true);

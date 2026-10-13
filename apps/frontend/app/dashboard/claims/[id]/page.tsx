@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { useAuth } from '../../../lib/auth-context';
 import {
   loadData as fetchClaimData,
@@ -46,7 +46,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ClaimDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const { token } = useAuth();
 
   const [claim, setClaim] = useState<Claim | null>(null);

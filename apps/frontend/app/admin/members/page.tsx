@@ -8,8 +8,6 @@ import {
   Users,
   Search,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 
 interface Member {

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../lib/auth-context';
 import { logger } from '../../lib/logger';
 import {
-  FileText,
   Eye,
   CheckCircle2,
   AlertCircle,

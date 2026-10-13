@@ -3,7 +3,6 @@
 import { useEffect, useState, Fragment } from "react";
 import { useAuth } from "../../lib/auth-context";
 import {
-  UserCheck,
   Loader2,
   Plus,
   ChevronRight,

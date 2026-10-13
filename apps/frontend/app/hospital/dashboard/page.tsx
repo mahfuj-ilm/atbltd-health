@@ -10,9 +10,7 @@ import {
   Building2,
   LogOut,
   Paperclip,
-  Eye,
 } from 'lucide-react';
-import Link from 'next/link';
 import { logger } from '../../lib/logger';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.atbltd.health/api';

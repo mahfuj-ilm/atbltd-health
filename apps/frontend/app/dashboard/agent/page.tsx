@@ -23,7 +23,7 @@ interface AgentSummary {
 }
 
 export default function AgentDashboard() {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [summary, setSummary] = useState<AgentSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

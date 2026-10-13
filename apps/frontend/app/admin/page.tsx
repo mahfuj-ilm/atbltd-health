@@ -57,7 +57,7 @@ const defaultStats: AdminStats = {
 };
 
 export default function AdminDashboard() {
-  const { token, user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { token, user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<AdminStats>(defaultStats);
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);

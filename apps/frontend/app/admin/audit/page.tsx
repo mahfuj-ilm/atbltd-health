@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth-context";
 import {
   ShieldAlert,
-  Search,
   Loader2,
   ChevronLeft,
   ChevronRight,
