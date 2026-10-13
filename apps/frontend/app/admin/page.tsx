@@ -74,10 +74,64 @@ export default function AdminDashboard() {
       router.replace('/dashboard');
       return;
     }
-    if (token && isAuthenticated) {
-      loadData();
-    }
-  }, [user, token, isAuthenticated]);
+    if (!token || !isAuthenticated) return;
+
+    const fetchDashboard = async () => {
+      setIsLoading(true);
+      try {
+        if (isStaff) {
+          const [stats, payments] = await Promise.all([
+            adminApi.getDashboard(token),
+            adminApi.getPendingPayments(token),
+          ]);
+          setStats({ ...defaultStats, ...stats });
+          setPendingPayments(Array.isArray(payments) ? payments : []);
+        } else {
+          const res = await fetch(`${API_BASE}/admin/dashboard`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setStats({
+              members: {
+                total: data.members?.total || 0,
+                active: data.members?.active || 0,
+                inactive: 0,
+                newThisMonth: 0,
+              },
+              payments: {
+                totalCollection: 0,
+                pendingVerification: 0,
+                verifiedToday: 0,
+              },
+              claims: { submitted: 0, pending: 0, approved: 0, rejected: 0 },
+              agents: {
+                total: data.agents?.total || 0,
+                active: 0,
+              },
+              commissions: {
+                totalEarned: data.commissions?.totalEarned || 0,
+                totalPaid: data.commissions?.totalPaid || 0,
+              },
+            });
+          } else {
+            setStats(defaultStats);
+          }
+          setPendingPayments([]);
+        }
+      } catch (err) {
+        logger.error('Failed to load admin dashboard data', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        setStats(defaultStats);
+        setPendingPayments([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchDashboard();
+  }, [user, token, isAuthenticated, isStaff, router]);
 
   const loadData = async () => {
     setIsLoading(true);

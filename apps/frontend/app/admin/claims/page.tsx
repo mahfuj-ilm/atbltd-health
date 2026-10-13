@@ -114,7 +114,7 @@ export default function AdminClaimsPage() {
     if (token) {
       loadClaims(page, statusFilter);
     }
-  }, [token, page, statusFilter]);
+  }, [token, page, statusFilter, loadClaims]);
 
   const openReview = async (claim: AdminClaim) => {
     setSelectedClaim(claim);

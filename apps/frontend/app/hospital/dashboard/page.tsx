@@ -89,8 +89,26 @@ export default function HospitalDashboard() {
 
     const hospital = JSON.parse(hospitalData);
     setHospitalName(hospital.name);
-    loadClaims(token);
-  }, []);
+
+    const fetchClaims = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/hospitals/claims`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setClaims(Array.isArray(data) ? data : []);
+      } catch (err) {
+        logger.error('Failed to load hospital claims', {
+          endpoint: '/hospitals/claims',
+          error: err instanceof Error ? err.message : String(err),
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchClaims();
+  }, [router]);
 
   const loadClaims = async (token: string) => {
     try {

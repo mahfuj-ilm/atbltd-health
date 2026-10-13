@@ -36,7 +36,23 @@ export default function HospitalsPage() {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    if (token) loadHospitals();
+    if (!token) return;
+
+    const fetchHospitals = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/hospitals`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setHospitals(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchHospitals();
   }, [token]);
 
   const loadHospitals = async () => {

@@ -28,32 +28,32 @@ export default function AgentDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (token) loadSummary();
-  }, [token]);
+    if (!token) return;
 
-  const loadSummary = async () => {
-    try {
-      // First get the agent ID for this user
-      const profileRes = await fetch(`${API_BASE}/auth/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const profile = await profileRes.json();
-
-      // Then get commission summary
-      const res = await fetch(
-        `${API_BASE}/commissions/agent/${profile.id}/summary`,
-        {
+    const fetchSummary = async () => {
+      try {
+        const profileRes = await fetch(`${API_BASE}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      const data = await res.json();
-      setSummary(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        });
+        const profile = await profileRes.json();
+
+        const res = await fetch(
+          `${API_BASE}/commissions/agent/${profile.id}/summary`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        const data = await res.json();
+        setSummary(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchSummary();
+  }, [token]);
 
   if (isLoading) {
     return (

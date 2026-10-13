@@ -63,21 +63,21 @@ export default function MemberDashboard() {
       router.replace("/admin");
       return;
     }
-    if (token && isAuthenticated) {
-      loadDashboard();
-    }
-  }, [user, token, isAuthenticated]);
+    if (!token || !isAuthenticated) return;
 
-  const loadDashboard = async () => {
-    try {
-      const data = await membershipApi.getDashboard(token!);
-      setDashboard(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const fetchDashboard = async () => {
+      try {
+        const data = await membershipApi.getDashboard(token);
+        setDashboard(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchDashboard();
+  }, [user, token, isAuthenticated, router]);
 
   const copyMemberId = (id: string) => {
     navigator.clipboard.writeText(id);

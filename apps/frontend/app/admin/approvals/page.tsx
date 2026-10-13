@@ -30,10 +30,6 @@ export default function ApprovalsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState('');
 
-  useEffect(() => {
-    if (token) loadPending();
-  }, [token]);
-
   const loadPending = async () => {
     try {
       const res = await fetch(`${API_BASE}/agents/pending-approvals`, {
@@ -48,6 +44,27 @@ export default function ApprovalsPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchPendingApprovals = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/agents/pending-approvals`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setPendingCreates(data.pendingCreates || []);
+        setPendingDeactivations(data.pendingDeactivations || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchPendingApprovals();
+  }, [token]);
 
   const handleApprove = async (id: string) => {
     try {

@@ -91,22 +91,24 @@ export default function MemberClaimsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   useEffect(() => {
-    if (token) loadClaims();
-  }, [token]);
+    if (!token) return;
 
-  const loadClaims = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/claims/mine`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setClaims(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const fetchClaims = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/claims/mine`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        setClaims(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchClaims();
+  }, [token]);
 
   const formatCurrency = (amount: number) =>
     `${amount?.toLocaleString() || 0} BDT`;
