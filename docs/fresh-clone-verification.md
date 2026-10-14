@@ -10,10 +10,10 @@ Environment: Node.js `v26.8.1`, npm `11.19.0`.
 | --- | --- |
 | `npm ci` | Passed; installed from the committed root lockfile. |
 | `npm run build` | Passed; backend and frontend production builds completed. |
-| `npm run test:cov` | Passed; backend 27 suites / 239 tests, frontend 30 suites / 111 tests. |
+| `npm run test:cov` | Passed; backend 27 suites / 239 tests (86% line coverage), frontend 38 suites / 155 tests (77% line coverage, meeting the 70% threshold). |
 | `npm run typecheck` | Passed for backend and frontend. |
 | `npm run test:isolated` | Passed; backend 27 suites / 239 tests. |
-| `npm run lint` | Passed with 22 backend ESLint warnings and no errors. |
+| `npm run lint` | Passed with 0 errors across both workspaces (backend 22 warnings, frontend 0 errors/warnings on ESLint 9 Flat Config). |
 | `npm audit --workspaces --omit=dev --audit-level=high` | Passed; 0 production dependency vulnerabilities. |
 
 The full workspace audit (`npm audit --workspaces --audit-level=high`) reports

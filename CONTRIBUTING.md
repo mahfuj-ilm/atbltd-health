@@ -93,10 +93,12 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 ## Code Style
 
 - **TypeScript** with strict null checks where possible
-- **ESLint + Prettier** — run `npm run lint` before committing
+- **ESLint + Prettier** — run `npm run lint` before committing:
+  - Frontend uses **ESLint 9 Flat Config** (`apps/frontend/eslint.config.mjs`)
+  - Backend uses modular NestJS ESLint config (`apps/backend/.eslintrc.js`)
 - **NestJS patterns** — modular services, typed DTOs, guards, interceptors
 - **React components under 500 LOC** — split larger ones
-- **Every new feature needs tests**
+- **Every new feature needs tests** with >70% coverage requirement
 
 ## Testing
 

@@ -1,6 +1,6 @@
 # Default owner for everything in the repo
 
--                       @rehmanshawon
+*                       @rehmanshawon
 
 # Backend ownership
 
@@ -24,3 +24,4 @@
 /README.md @rehmanshawon
 /CONTRIBUTING.md @rehmanshawon
 /SECURITY.md @rehmanshawon
+/docs/ @rehmanshawon

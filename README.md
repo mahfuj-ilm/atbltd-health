@@ -36,10 +36,10 @@ atbltd-health/
 │   └── frontend/                   # Next.js 16 App (port 3001)
 │       ├── package.json
 │       ├── .env.example            # ✅ Frontend env vars
-│       ├── .eslintrc.json          # ✅ Frontend lint config
+│       ├── eslint.config.mjs       # ✅ Frontend ESLint 9 flat config
 │       ├── .prettierrc             # ✅ Frontend prettier
-│       ├── jest.config.js          # ✅ Frontend test config
-│       ├── jest.setup.js
+│       ├── jest.config.js          # ✅ Frontend test config (>70% coverage threshold)
+│       ├── jest.setup.js           # ✅ Test environment & motion mocks
 │       └── app/
 │           ├── admin/              # Admin/Owner/Agent dashboard
 │           ├── dashboard/          # Member dashboard
@@ -48,12 +48,18 @@ atbltd-health/
 │           ├── components/         # Shared components
 │           ├── i18n/               # Bengali/English translations
 │           └── lib/                # API helpers & auth context
+├── docs/                           # ✅ Repository policies & operational documentation
+│   ├── branch-protection.md        # ✅ Branch protection policy & CI mapping
+│   └── fresh-clone-verification.md # ✅ Clean checkout verification audit
 ├── base.Dockerfile                 # ✅ Multi-stage workspace Docker build
 ├── docker-compose.yml              # ✅ Docker Compose configuration
+├── docker-compose.test.yml         # ✅ Disposable PostgreSQL for E2E tests
 ├── .env.example                    # ✅ Root env vars (all variables)
 ├── .eslintrc.json                  # ✅ Root lint config
 ├── Dockerfile                      # ✅ Root Dockerfile
 ├── .github/
+│   ├── CODEOWNERS                  # ✅ Code ownership & PR review routing
+│   ├── dependabot.yml              # ✅ Automated security dependency updates
 │   ├── PULL_REQUEST_TEMPLATE.md    # ✅ PR review template
 │   └── workflows/
 │       ├── ci.yml                  # ✅ CI: lint, test, typecheck, audit
@@ -61,26 +67,33 @@ atbltd-health/
 ├── README.md                       # ✅ This file
 ├── CHANGELOG.md                    # ✅ Release history
 ├── CONTRIBUTING.md                 # ✅ Contribution guide
+├── SECURITY.md                     # ✅ Security policy & vulnerability reporting
 └── MONOREPO.md                     # ✅ Monorepo structure docs
 ```
 
 ## Key Files Location
 
-| File                 | Path                           |
-| -------------------- | ------------------------------ |
-| Workspace lockfile   | `package-lock.json`            |
-| Backend env example  | `apps/backend/.env.example`    |
-| Frontend env example | `apps/frontend/.env.example`   |
-| Root env example     | `.env.example`                 |
-| Backend ESLint       | `apps/backend/.eslintrc.js`    |
-| Frontend ESLint      | `apps/frontend/.eslintrc.json` |
-| Backend Prettier     | `apps/backend/.prettierrc`     |
-| Frontend Prettier    | `apps/frontend/.prettierrc`    |
-| Docker (multi-stage) | `base.Dockerfile`              |
-| Docker (root)        | `Dockerfile`                   |
-| Docker Compose       | `docker-compose.yml`           |
-| CI workflow          | `.github/workflows/ci.yml`     |
-| CD workflow          | `.github/workflows/deploy.yml` |
+| File                      | Path                              |
+| ------------------------- | --------------------------------- |
+| Workspace lockfile        | `package-lock.json`               |
+| Backend env example       | `apps/backend/.env.example`       |
+| Frontend env example      | `apps/frontend/.env.example`      |
+| Root env example          | `.env.example`                    |
+| Backend ESLint            | `apps/backend/.eslintrc.js`       |
+| Frontend ESLint           | `apps/frontend/eslint.config.mjs` |
+| Backend Prettier          | `apps/backend/.prettierrc`        |
+| Frontend Prettier         | `apps/frontend/.prettierrc`       |
+| Code Owners               | `.github/CODEOWNERS`              |
+| Dependabot config         | `.github/dependabot.yml`          |
+| Branch protection docs    | `docs/branch-protection.md`       |
+| Clean verification record | `docs/fresh-clone-verification.md`|
+| Security policy           | `SECURITY.md`                     |
+| Docker (multi-stage)      | `base.Dockerfile`                 |
+| Docker (root)             | `Dockerfile`                      |
+| Docker Compose            | `docker-compose.yml`              |
+| Test Compose (disposable) | `docker-compose.test.yml`         |
+| CI workflow               | `.github/workflows/ci.yml`        |
+| CD workflow               | `.github/workflows/deploy.yml`    |
 
 ## Tech Stack
 
