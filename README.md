@@ -65,6 +65,7 @@ atbltd-health/
 │   ├── PULL_REQUEST_TEMPLATE.md    # ✅ PR review template
 │   └── workflows/
 │       ├── ci.yml                  # ✅ CI: lint, test, typecheck, audit
+│       ├── codeql.yml              # ✅ SAST: CodeQL static security analysis
 │       └── deploy.yml              # ✅ CD: Docker build & EC2 deploy
 ├── README.md                       # ✅ This file
 ├── CHANGELOG.md                    # ✅ Release history
@@ -96,6 +97,7 @@ atbltd-health/
 | Test Compose (disposable) | `docker-compose.test.yml`         |
 | Bootstrap script          | `scripts/bootstrap.sh`            |
 | CI workflow               | `.github/workflows/ci.yml`        |
+| CodeQL SAST workflow      | `.github/workflows/codeql.yml`    |
 | CD workflow               | `.github/workflows/deploy.yml`    |
 
 ## Tech Stack
