@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth-context";
 import { membershipApi } from "../../lib/api";
 import {
-  CreditCard,
   Copy,
   CheckCircle2,
   Loader2,
@@ -19,12 +18,22 @@ export default function DigitalCardPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     if (token) {
       membershipApi
         .getDashboard(token)
-        .then((data: any) => setCard(data.digitalCard))
-        .finally(() => setIsLoading(false));
+        .then((data: any) => {
+          if (!cancelled) setCard(data.digitalCard);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   const copyId = (id: string) => {

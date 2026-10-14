@@ -14,17 +14,27 @@ import {
 } from "lucide-react";
 
 export default function ProfilePage() {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     if (token) {
       membershipApi
         .getDashboard(token)
-        .then((data: any) => setProfile(data.profile))
-        .finally(() => setIsLoading(false));
+        .then((data: any) => {
+          if (!cancelled) setProfile(data.profile);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   if (isLoading) {
