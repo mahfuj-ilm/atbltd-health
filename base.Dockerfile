@@ -1,5 +1,5 @@
 # --- Workspace Dependencies ---
-FROM node:22-alpine AS dependencies
+FROM node:26-alpine AS dependencies
 
 WORKDIR /app
 COPY package*.json ./
@@ -25,7 +25,7 @@ COPY apps/backend/ ./apps/backend/
 RUN npm run build:backend
 
 # --- Final Frontend Image ---
-FROM node:22-alpine AS frontend
+FROM node:26-alpine AS frontend
 
 WORKDIR /app
 COPY --from=frontend-build /app/apps/frontend/.next ./.next
@@ -39,7 +39,7 @@ EXPOSE 3000
 CMD ["npx", "next", "start", "-p", "3000"]
 
 # --- Final Backend Image ---
-FROM node:22-alpine AS backend
+FROM node:26-alpine AS backend
 
 WORKDIR /app
 COPY --from=backend-build /app/apps/backend/dist ./dist
