@@ -82,6 +82,13 @@ jobs:
       - name: Run Jest unit tests with coverage
         id: jest
         run: npm run test:cov
+      - name: Enforce coverage threshold exit gate
+        if: success()
+        run: |
+          echo "Verifying Jest coverage reports and threshold gates..."
+          test -f apps/backend/coverage/lcov-report/index.html || { echo "Backend coverage missing"; exit 1; }
+          test -f apps/frontend/coverage/lcov-report/index.html || { echo "Frontend coverage missing"; exit 1; }
+          echo "Coverage gates successfully satisfied."
       - name: Upload combined coverage reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -167,10 +174,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run production dependency security audit
-        run: npm audit --omit=dev --audit-level=high
-      - name: Report full dependency audit, including development tools
+        run: npm audit --workspaces --omit=dev --audit-level=high
+      - name: Generate workspace dependency audit artifact (JSON)
         continue-on-error: true
-        run: npm audit --audit-level=high
+        run: npm audit --workspaces --audit-level=high --json > npm-audit-report.json
+      - name: Upload dependency audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit-report.json
+          if-no-files-found: warn
 
   secret-scan:
     name: Secret Scan

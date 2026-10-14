@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { Claim } from '../../entities/claim.entity';
 import { ClaimDocument } from '../../entities/claim-document.entity';
 import { ClaimStatus } from '../../common/enums/claim-status.enum';
@@ -100,7 +100,7 @@ export class ClaimDocumentService {
     userId: string,
     userRole: string,
   ): Promise<ClaimDocument[]> {
-    const where: any = { claimId };
+    const where: FindOptionsWhere<ClaimDocument> = { claimId };
 
     if (userRole === UserRole.MEMBER) {
       const claim = await this.claimRepository.findOne({

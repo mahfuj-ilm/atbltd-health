@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not } from 'typeorm';
+import { Repository, IsNull, Not, FindOptionsWhere } from 'typeorm';
 import { Claim } from '../../entities/claim.entity';
 import { Membership } from '../../entities/membership.entity';
 import { Payment, PaymentStatus, PaymentType } from '../../entities/payment.entity';
@@ -132,7 +132,7 @@ export class ClaimService {
    * Get single claim (member's own or admin)
    */
   async getClaimById(claimId: string, userId: string, userRole: string): Promise<Claim> {
-    const where: any = { id: claimId };
+    const where: FindOptionsWhere<Claim> = { id: claimId };
 
     // Members can only see their own claims
     if (userRole === UserRole.MEMBER) {
@@ -172,18 +172,18 @@ export class ClaimService {
     totalPages: number;
   }> {
     const { status, memberId, page = 1, limit = 20, reviewerRole } = filters;
-    const where: any = {};
+    const where: FindOptionsWhere<Claim> = {};
 
     if (status) where.status = status;
     if (memberId) where.memberId = memberId;
 
     if (reviewerRole === UserRole.ADMIN) {
       // Admin sees unreviewed claims
-      where.reviewedBy = null;
+      where.reviewedBy = IsNull();
     } else if (reviewerRole === UserRole.SUPER_ADMIN) {
       // SA sees claims reviewed by Admin but not finally approved
       where.reviewedBy = Not(IsNull());
-      where.checkerApprovedBy = null;
+      where.checkerApprovedBy = IsNull();
     }
 
     const [claims, total] = await this.claimRepository.findAndCount({

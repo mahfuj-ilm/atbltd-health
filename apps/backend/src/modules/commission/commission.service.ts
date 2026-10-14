@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not } from 'typeorm';
+import { Repository, IsNull, Not, FindOptionsWhere } from 'typeorm';
 import { Commission, CommissionStatus, CommissionType } from '../../entities/commission.entity';
 import { Agent } from '../../entities/agent.entity';
 import { User } from '../../entities/user.entity';
@@ -306,18 +306,18 @@ export class CommissionService {
     totalPages: number;
   }> {
     const { agentId, status, page = 1, limit = 20, reviewerRole } = filters;
-    const where: any = {};
+    const where: FindOptionsWhere<Commission> = {};
 
     if (agentId) where.agentId = agentId;
     if (status) where.status = status;
 
     if (reviewerRole === UserRole.ADMIN) {
       // Admin sees unapproved commissions
-      where.approvedBy = null;
+      where.approvedBy = IsNull();
     } else if (reviewerRole === UserRole.SUPER_ADMIN) {
       // SA sees commissions approved by Admin, not yet paid
       where.approvedBy = Not(IsNull());
-      where.checkerApprovedBy = null;
+      where.checkerApprovedBy = IsNull();
       where.status = CommissionStatus.APPROVED;
     }
 

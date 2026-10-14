@@ -251,7 +251,7 @@ describe('CommissionService', () => {
       expect.objectContaining({
         where: {
           approvedBy: Not(IsNull()),
-          checkerApprovedBy: null,
+          checkerApprovedBy: IsNull(),
           status: CommissionStatus.APPROVED,
         },
         skip: 10,
