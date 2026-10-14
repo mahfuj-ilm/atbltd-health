@@ -15,8 +15,7 @@ import {
 import ClaimReviewModal from './ClaimReviewModal';
 import AdminTable from '../components/AdminTable';
 import { useAdminClaims, AdminClaim } from './useAdminClaims';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.atbltd.health/api';
+import { getClaimDocuments, ClaimDocumentItem as ClaimDocument } from '../../lib/apiClient';
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string; label: string }> = {
   submitted: {
@@ -63,32 +62,6 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string; 
   },
 };
 
-interface ClaimDocument {
-  id: string;
-  documentType: string;
-  fileName: string;
-  fileUrl: string;
-  notes: string | null;
-  isVerified: boolean;
-  createdAt: string;
-}
-
-// interface Claim {
-//   id: string;
-//   memberId: string;
-//   surgeryType: string;
-//   hospitalName: string;
-//   admissionDate: string;
-//   claimedAmount: number;
-//   approvedAmount: number | null;
-//   status: string;
-//   rejectionReason: string | null;
-//   notes: string | null;
-//   documents: string[] | null;
-//   createdAt: string;
-//   member?: { memberId: string; fullName: string; mobileNumber: string };
-// }
-
 export default function AdminClaimsPage() {
   const { token } = useAuth();
   const [page, setPage] = useState(1);
@@ -125,11 +98,9 @@ export default function AdminClaimsPage() {
     setClaimDocuments([]);
     setLoadingDocuments(true);
 
+    if (!token) return;
     try {
-      const res = await fetch(`${API_BASE}/claims/${claim.id}/documents`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const docs = await res.json();
+      const docs = await getClaimDocuments(token, claim.id);
       setClaimDocuments(Array.isArray(docs) ? docs : []);
     } catch (err) {
       logger.error('Failed to load claim documents', {

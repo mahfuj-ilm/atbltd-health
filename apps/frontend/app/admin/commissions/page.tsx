@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../lib/auth-context';
 import { logger } from '../../lib/logger';
 import { Banknote, Loader2, CheckCircle2, XCircle, Clock, TrendingUp } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.atbltd.health/api';
+import {
+  getCommissions,
+  approveCommission,
+  confirmCommissionPayment,
+  declineCommission,
+  CommissionItem as Commission,
+} from '../../lib/apiClient';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -15,20 +20,6 @@ const STATUS_COLORS: Record<string, string> = {
   paid: 'bg-green-50 text-green-700 border-green-200',
   reversed: 'bg-red-50 text-red-700 border-red-200',
 };
-
-interface Commission {
-  id: string;
-  agentCode: string;
-  memberCode: string;
-  commissionType: string;
-  registrationAmount: number;
-  commissionRate: number;
-  commissionAmount: number;
-  status: string;
-  createdAt: string;
-  agent?: { user?: { fullName: string } };
-  member?: { fullName: string; memberId: string };
-}
 
 export default function CommissionsPage() {
   const { token, user } = useAuth();
@@ -51,30 +42,27 @@ export default function CommissionsPage() {
     totalPending: 0,
   });
 
-  useEffect(() => {
-    if (!token) return;
-
-    const fetchCommissions = async () => {
+  const loadCommissions = useCallback(
+    async (targetPage = page, targetStatus = statusFilter) => {
+      if (!token) return;
       setIsLoading(true);
       try {
-        const params = new URLSearchParams();
-        if (statusFilter) params.set('status', statusFilter);
-        params.set('page', String(page));
-        params.set('limit', '15');
-
-        const res = await fetch(`${API_BASE}/commissions?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const data = await getCommissions(token, {
+          page: targetPage,
+          limit: 15,
+          status: targetStatus || undefined,
         });
-        const data = await res.json();
-        setCommissions(data.commissions || []);
+
+        const list = data.commissions || [];
+        setCommissions(list);
         setTotal(data.total || 0);
         setTotalPages(data.totalPages || 1);
 
-        const earned = (data.commissions || []).reduce(
+        const earned = list.reduce(
           (sum: number, c: Commission) => sum + Number(c.commissionAmount),
           0,
         );
-        const paid = (data.commissions || [])
+        const paid = list
           .filter((c: Commission) => c.status === 'paid')
           .reduce((sum: number, c: Commission) => sum + Number(c.commissionAmount), 0);
         setSummary({
@@ -90,59 +78,20 @@ export default function CommissionsPage() {
       } finally {
         setIsLoading(false);
       }
-    };
+    },
+    [token, page, statusFilter],
+  );
 
-    void fetchCommissions();
-  }, [token, page, statusFilter]);
-
-  const loadCommissions = async () => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter) params.set('status', statusFilter);
-      params.set('page', String(page));
-      params.set('limit', '15');
-
-      const res = await fetch(`${API_BASE}/commissions?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setCommissions(data.commissions || []);
-      setTotal(data.total || 0);
-      setTotalPages(data.totalPages || 1);
-
-      // Calculate summary from displayed data
-      const earned = (data.commissions || []).reduce(
-        (sum: number, c: Commission) => sum + Number(c.commissionAmount),
-        0,
-      );
-      const paid = (data.commissions || [])
-        .filter((c: Commission) => c.status === 'paid')
-        .reduce((sum: number, c: Commission) => sum + Number(c.commissionAmount), 0);
-      setSummary({
-        totalEarned: earned,
-        totalPaid: paid,
-        totalPending: earned - paid,
-      });
-    } catch (err) {
-      logger.error('Failed to load commissions', {
-        endpoint: '/commissions',
-        error: err instanceof Error ? err.message : String(err),
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    void loadCommissions(page, statusFilter);
+  }, [loadCommissions, page, statusFilter]);
 
   const handleApprove = async (id: string) => {
+    if (!token) return;
     try {
-      const res = await fetch(`${API_BASE}/commissions/${id}/approve`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Failed');
+      await approveCommission(token, id);
       setActionMsg({ type: 'success', text: 'Commission approved' });
-      loadCommissions();
+      await loadCommissions(page, statusFilter);
     } catch {
       setActionMsg({ type: 'error', text: 'Approval failed' });
     }
@@ -150,22 +99,12 @@ export default function CommissionsPage() {
   };
 
   const handleConfirmPayment = async (id: string) => {
+    if (!token) return;
     try {
-      const res = await fetch(`${API_BASE}/commissions/${id}/confirm-payment`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message);
-      }
+      await confirmCommissionPayment(token, id);
       setActionMsg({ type: 'success', text: 'Payment confirmed' });
-      loadCommissions();
+      await loadCommissions(page, statusFilter);
     } catch (err: unknown) {
-      logger.error('Failed to confirm payment', {
-        endpoint: `/commissions/${id}/confirm-payment`,
-        error: err instanceof Error ? err.message : String(err),
-      });
       setActionMsg({
         type: 'error',
         text: (err instanceof Error ? err.message : String(err)) || 'Confirmation failed',
@@ -175,26 +114,15 @@ export default function CommissionsPage() {
   };
 
   const handleDecline = async (id: string) => {
+    if (!token) return;
     const reason = window.prompt('Reason for declining (optional):');
     if (reason === null) return;
 
     try {
-      const res = await fetch(`${API_BASE}/commissions/${id}/decline`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason }),
-      });
-      if (!res.ok) throw new Error('Failed');
+      await declineCommission(token, id, reason);
       setActionMsg({ type: 'success', text: 'Commission declined' });
-      loadCommissions();
+      await loadCommissions(page, statusFilter);
     } catch (err: unknown) {
-      logger.error('Failed to decline commission', {
-        endpoint: `/commissions/${id}/decline`,
-        error: err instanceof Error ? err.message : String(err),
-      });
       setActionMsg({
         type: 'error',
         text: (err instanceof Error ? err.message : String(err)) || 'Decline failed',

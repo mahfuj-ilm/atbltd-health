@@ -86,6 +86,7 @@ atbltd-health/
 | Frontend ESLint           | `apps/frontend/eslint.config.mjs` |
 | Backend Prettier          | `apps/backend/.prettierrc`        |
 | Frontend Prettier         | `apps/frontend/.prettierrc`       |
+| Typed API client          | `apps/frontend/app/lib/apiClient.ts` |
 | Code Owners               | `.github/CODEOWNERS`              |
 | Dependabot config         | `.github/dependabot.yml`          |
 | Branch protection docs    | `docs/branch-protection.md`       |

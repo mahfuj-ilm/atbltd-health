@@ -158,4 +158,53 @@ describe('CommissionsPage', () => {
 
     expect(screen.queryByText('Decline')).not.toBeInTheDocument();
   });
+
+  it('handles initial load and post-action refresh via unified loadCommissions path', async () => {
+    const fetchMock = jest.fn();
+
+    // 1. Initial load
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({
+        commissions: mockCommissions,
+        total: 1,
+        totalPages: 1,
+      }),
+    });
+
+    // 2. Action call (approve)
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({ message: 'Commission approved' }),
+    });
+
+    // 3. Post-action reload
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({
+        commissions: [{ ...mockCommissions[0], status: 'approved' }],
+        total: 1,
+        totalPages: 1,
+      }),
+    });
+
+    (global as any).fetch = fetchMock;
+
+    render(<CommissionsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Approve')).toBeInTheDocument();
+    });
+
+    const approveButton = screen.getByText('Approve');
+    await userEvent.click(approveButton);
+
+    await waitFor(() => {
+      // Confirms initial fetch + action fetch + post-action refresh
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+  });
 });
