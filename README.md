@@ -48,6 +48,8 @@ atbltd-health/
 │           ├── components/         # Shared components
 │           ├── i18n/               # Bengali/English translations
 │           └── lib/                # API helpers & auth context
+├── scripts/                        # ✅ Repository automation & operational scripts
+│   └── bootstrap.sh                # ✅ Single-command setup for fresh checkouts
 ├── docs/                           # ✅ Repository policies & operational documentation
 │   ├── branch-protection.md        # ✅ Branch protection policy & CI mapping
 │   └── fresh-clone-verification.md # ✅ Clean checkout verification audit
@@ -63,6 +65,7 @@ atbltd-health/
 │   ├── PULL_REQUEST_TEMPLATE.md    # ✅ PR review template
 │   └── workflows/
 │       ├── ci.yml                  # ✅ CI: lint, test, typecheck, audit
+│       ├── codeql.yml              # ✅ SAST: CodeQL static security analysis
 │       └── deploy.yml              # ✅ CD: Docker build & EC2 deploy
 ├── README.md                       # ✅ This file
 ├── CHANGELOG.md                    # ✅ Release history
@@ -92,7 +95,9 @@ atbltd-health/
 | Docker (root)             | `Dockerfile`                      |
 | Docker Compose            | `docker-compose.yml`              |
 | Test Compose (disposable) | `docker-compose.test.yml`         |
+| Bootstrap script          | `scripts/bootstrap.sh`            |
 | CI workflow               | `.github/workflows/ci.yml`        |
+| CodeQL SAST workflow      | `.github/workflows/codeql.yml`    |
 | CD workflow               | `.github/workflows/deploy.yml`    |
 
 ## Tech Stack
@@ -112,7 +117,21 @@ atbltd-health/
 - PostgreSQL 16+
 - npm 10+
 
-## Installation
+## Quick Start (Automated Bootstrap)
+
+For fresh checkouts, configure environment templates, install workspace dependencies, and run migrations/seeds with a single command:
+
+```bash
+git clone https://github.com/rehmanshawon/atbltd-health.git
+cd atbltd-health
+npm run bootstrap
+```
+
+Pass `--fresh` to force reinstalling dependencies via `npm ci`, or `--skip-db` if configuring the database later.
+
+---
+
+## Manual Installation (Step-by-Step)
 
 ### 1. Clone the repository
 

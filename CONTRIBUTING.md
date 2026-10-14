@@ -13,13 +13,21 @@ platform for Bangladesh.
    cd atbltd-health
    ```
 
-3. **Install dependencies:**
+3. **Bootstrap repository (automated):**
+
+   ```bash
+   npm run bootstrap
+   ```
+
+   *Alternatively, follow the manual steps below:*
+
+4. **Install dependencies:**
 
    ```bash
    npm ci
    ```
 
-4. **Set up environment:**
+5. **Set up environment:**
 
    ```bash
    cd apps/backend
@@ -29,7 +37,7 @@ platform for Bangladesh.
    cd ../..
    ```
 
-5. **Run database migrations:**
+6. **Run database migrations:**
 
    ```bash
    psql -U postgres -c "CREATE DATABASE atbltd;"
@@ -41,7 +49,7 @@ platform for Bangladesh.
    schema synchronization is disabled, and the existing EC2 schema must be
    backed up and baselined before automatic migrations are enabled.
 
-6. **Start development:**
+7. **Start development:**
 
    ```bash
    # Terminal 1: Backend
