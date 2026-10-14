@@ -18,13 +18,15 @@ const customJestConfig = {
     '!app/**/__tests__/**',
     '!app/**/layout.tsx',
     '!app/providers.tsx',
+    '!app/i18n/**',
+    '!app/lib/constants.ts',
   ],
   coverageThreshold: {
     global: {
-      lines: 61,
-      functions: 50,
-      branches: 52,
-      statements: 59,
+      lines: 70,
+      functions: 60,
+      branches: 55,
+      statements: 70,
     },
   },
 };

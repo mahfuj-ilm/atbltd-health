@@ -19,12 +19,22 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     if (token) {
       membershipApi
         .getDashboard(token)
-        .then((data: any) => setProfile(data.profile))
-        .finally(() => setIsLoading(false));
+        .then((data: any) => {
+          if (!cancelled) setProfile(data.profile);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   if (isLoading) {
