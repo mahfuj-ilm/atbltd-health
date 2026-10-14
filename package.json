@@ -9,6 +9,7 @@
     "apps/frontend"
   ],
   "scripts": {
+    "bootstrap": "bash scripts/bootstrap.sh",
     "dev": "concurrently \"npm run start:dev --workspace=@atbltd-health/backend\" \"npm run dev --workspace=@atbltd-health/frontend -- --port 3001\"",
     "dev:backend": "npm run start:dev --workspace=@atbltd-health/backend",
     "dev:frontend": "npm run dev --workspace=@atbltd-health/frontend",
