@@ -6,6 +6,7 @@ import { authApi } from './api';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 interface User {
+  id?: string;
   memberId: string;
   fullName: string;
   role: 'super_admin' | 'admin' | 'owner' | 'agent' | 'member';

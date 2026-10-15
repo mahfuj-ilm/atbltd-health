@@ -6,6 +6,10 @@ import {
   getClaims,
   getClaimDocuments,
   updateClaimStatus,
+  getStaffUsers,
+  resetStaffPassword,
+  updateStaffStatus,
+  updateStaffSettings,
 } from '../apiClient';
 
 describe('apiClient', () => {
@@ -167,4 +171,111 @@ describe('apiClient', () => {
       expect(res).toEqual(mockClaim);
     });
   });
+
+  describe('Staff Management API methods', () => {
+    it('fetches staff users with query params', async () => {
+      const mockStaffResponse = {
+        users: [{ id: 'u1', memberId: 'ATB-26-SA-1', role: 'super_admin' }],
+        total: 1,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      };
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: jest.fn().mockResolvedValue(mockStaffResponse),
+      });
+
+      const res = await getStaffUsers('token-123', {
+        page: 1,
+        limit: 20,
+        role: 'admin',
+        search: 'Admin',
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/admin/staff?page=1&limit=20&role=admin&search=Admin'),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer token-123',
+          }),
+        }),
+      );
+      expect(res).toEqual(mockStaffResponse);
+    });
+
+    it('resets staff password', async () => {
+      const mockResult = { message: 'Staff password reset successfully', memberId: 'ATB-26-AD-1' };
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: jest.fn().mockResolvedValue(mockResult),
+      });
+
+      const res = await resetStaffPassword('token-123', 'staff-1', 'newSecret123');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/admin/staff/staff-1/password'),
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ newPassword: 'newSecret123' }),
+        }),
+      );
+      expect(res).toEqual(mockResult);
+    });
+
+    it('updates staff active status', async () => {
+      const mockResult = {
+        message: 'Staff user deactivated successfully',
+        user: { id: 'staff-1', isActive: false },
+      };
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: jest.fn().mockResolvedValue(mockResult),
+      });
+
+      const res = await updateStaffStatus('token-123', 'staff-1', false);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/admin/staff/staff-1/status'),
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ isActive: false }),
+        }),
+      );
+      expect(res).toEqual(mockResult);
+    });
+
+    it('updates staff settings', async () => {
+      const mockResult = {
+        message: 'Staff settings updated successfully',
+        user: { id: 'staff-1', fullName: 'Updated Name', isTwoFactorEnabled: true },
+      };
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: jest.fn().mockResolvedValue(mockResult),
+      });
+
+      const res = await updateStaffSettings('token-123', 'staff-1', {
+        fullName: 'Updated Name',
+        isTwoFactorEnabled: true,
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/admin/staff/staff-1'),
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({
+            fullName: 'Updated Name',
+            isTwoFactorEnabled: true,
+          }),
+        }),
+      );
+      expect(res).toEqual(mockResult);
+    });
+  });
 });
+

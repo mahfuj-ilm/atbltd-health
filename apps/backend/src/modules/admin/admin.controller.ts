@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Param,
   Query,
   UseGuards,
@@ -18,6 +19,9 @@ import { UserRole } from '../../common/enums/user-role.enum';
 import { PaymentStatus } from '../../entities/payment.entity';
 import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { FraudService } from './fraud.service';
+import { ResetStaffPasswordDto } from './dto/reset-staff-password.dto';
+import { UpdateStaffStatusDto } from './dto/update-staff-status.dto';
+import { UpdateStaffSettingsDto } from './dto/update-staff-settings.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -112,5 +116,62 @@ export class AdminController {
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   async checkUserFraud(@Param('userId') userId: string) {
     return this.fraudService.checkUser(userId);
+  }
+
+  /**
+   * GET /api/admin/staff
+   * List staff members (SUPER_ADMIN only)
+   */
+  @Get('staff')
+  @Roles(UserRole.SUPER_ADMIN)
+  async getStaff(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('role') role?: UserRole,
+    @Query('search') search?: string,
+  ) {
+    return this.adminService.getStaffUsers({ page, limit, role, search });
+  }
+
+  /**
+   * PUT /api/admin/staff/:id/password
+   * Reset staff password (SUPER_ADMIN only)
+   */
+  @Put('staff/:id/password')
+  @Roles(UserRole.SUPER_ADMIN)
+  async resetStaffPassword(
+    @Param('id') id: string,
+    @Body() dto: ResetStaffPasswordDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.adminService.resetStaffPassword(id, dto.newPassword, user.sub);
+  }
+
+  /**
+   * PUT /api/admin/staff/:id/status
+   * Toggle staff active status (SUPER_ADMIN only)
+   */
+  @Put('staff/:id/status')
+  @Roles(UserRole.SUPER_ADMIN)
+  async updateStaffStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateStaffStatusDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.adminService.updateStaffStatus(id, dto.isActive, user.sub);
+  }
+
+  /**
+   * PUT /api/admin/staff/:id
+   * Update staff settings (SUPER_ADMIN only)
+   */
+  @Put('staff/:id')
+  @Roles(UserRole.SUPER_ADMIN)
+  async updateStaffSettings(
+    @Param('id') id: string,
+    @Body() dto: UpdateStaffSettingsDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.adminService.updateStaffSettings(id, dto, user.sub);
   }
 }
