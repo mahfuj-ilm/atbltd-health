@@ -13,7 +13,6 @@ module.exports = {
     '!**/*.enum.ts',
     '!**/*.strategy.ts',
     '!**/*.interceptor.ts',
-    '!common/filters/**',
     '!main.ts',
     '!database/**',
     '!migrations/**',
