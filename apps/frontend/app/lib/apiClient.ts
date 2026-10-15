@@ -292,3 +292,26 @@ export async function updateStaffSettings(
   );
 }
 
+export interface CreateAdminPayload {
+  fullName: string;
+  mobileNumber: string;
+  email?: string;
+  password?: string;
+  permanentAddress?: string;
+  isTwoFactorEnabled?: boolean;
+}
+
+export async function createAdmin(
+  token: string,
+  payload: CreateAdminPayload,
+): Promise<{ message: string; user: StaffUser; temporaryPassword?: string }> {
+  return request<{ message: string; user: StaffUser; temporaryPassword?: string }>(
+    '/admin/staff/admins',
+    token,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
