@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { User } from '../../entities/user.entity';
 import { Payment, PaymentStatus } from '../../entities/payment.entity';
@@ -18,6 +18,7 @@ describe('AdminService', () => {
     findOne: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
+    create: jest.fn().mockImplementation((data) => ({ ...data, id: 'admin-uuid-created' })),
     createQueryBuilder: jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
@@ -444,6 +445,91 @@ describe('AdminService', () => {
       await expect(
         service.updateStaffSettings('member-1', { fullName: 'Name' }, 'sa-id'),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('createAdmin', () => {
+    it('successfully creates admin with custom password and creates audit log', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null); // mobile check
+      mockUserRepository.findOne.mockResolvedValueOnce(null); // email check
+      mockUserRepository.count.mockResolvedValueOnce(2);
+      mockUserRepository.save.mockImplementation(async (u) => u);
+
+      const result = await service.createAdmin(
+        {
+          fullName: 'New Admin Officer',
+          mobileNumber: '01799999999',
+          email: 'newadmin@atbltd.health',
+          password: 'customSecret123',
+          isTwoFactorEnabled: true,
+        },
+        'sa-id',
+      );
+
+      expect(result.message).toBe('Admin account created successfully');
+      expect(result.user.fullName).toBe('New Admin Officer');
+      expect(result.user.memberId).toMatch(/^ATB-\d{2}-AD-3$/);
+      expect((result.user as any).password).toBeUndefined();
+      expect(mockAuditLogRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          performedById: 'sa-id',
+          action: 'STAFF_ADMIN_CREATED',
+        }),
+      );
+    });
+
+    it('successfully creates admin with auto-generated password when password is not supplied', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null); // mobile check
+      mockUserRepository.count.mockResolvedValueOnce(0);
+      mockUserRepository.save.mockImplementation(async (u) => u);
+
+      const result = await service.createAdmin(
+        {
+          fullName: 'Second Admin Officer',
+          mobileNumber: '01712345678',
+        },
+        'sa-id',
+      );
+
+      expect(result.message).toBe('Admin account created successfully');
+      expect(result.temporaryPassword).toBe('sec345678');
+      expect(result.user.memberId).toMatch(/^ATB-\d{2}-AD-1$/);
+    });
+
+    it('throws ConflictException if mobile number already exists', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        id: 'existing-id',
+        mobileNumber: '01799999999',
+      });
+
+      await expect(
+        service.createAdmin(
+          {
+            fullName: 'Duplicate Mobile',
+            mobileNumber: '01799999999',
+          },
+          'sa-id',
+        ),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('throws ConflictException if email already exists', async () => {
+      mockUserRepository.findOne.mockResolvedValueOnce(null); // mobile check
+      mockUserRepository.findOne.mockResolvedValueOnce({
+        id: 'existing-id',
+        email: 'duplicate@atbltd.health',
+      });
+
+      await expect(
+        service.createAdmin(
+          {
+            fullName: 'Duplicate Email',
+            mobileNumber: '01788888888',
+            email: 'duplicate@atbltd.health',
+          },
+          'sa-id',
+        ),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });

@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -11,6 +17,7 @@ import { AuditLog } from '../../entities/audit-log.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { PaymentVerificationService } from './payment-verification.service';
 import { UpdateStaffSettingsDto } from './dto/update-staff-settings.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 
 @Injectable()
 export class AdminService {
@@ -508,6 +515,93 @@ export class AdminService {
     return {
       message: 'Staff settings updated successfully',
       user: this.sanitizeUser(targetUser),
+    };
+  }
+
+  /**
+   * Helper to generate a default password: first 3 letters of name + last 6 digits of mobile
+   */
+  private generatePassword(fullName: string, mobileNumber: string): string {
+    const namePart = fullName.replace(/\s+/g, '').substring(0, 3).toLowerCase();
+    const mobilePart = mobileNumber.replace(/\D/g, '').slice(-6);
+    return `${namePart}${mobilePart}`;
+  }
+
+  /**
+   * Create a new Admin account (Super Admin only)
+   */
+  async createAdmin(
+    dto: CreateAdminDto,
+    currentUserId: string,
+  ): Promise<{
+    message: string;
+    user: Omit<User, 'password'>;
+    temporaryPassword?: string;
+  }> {
+    const mobile = dto.mobileNumber.trim();
+    const existingMobile = await this.userRepository.findOne({
+      where: { mobileNumber: mobile },
+    });
+    if (existingMobile) {
+      throw new ConflictException('A user with this mobile number already exists');
+    }
+
+    if (dto.email && dto.email.trim()) {
+      const email = dto.email.trim().toLowerCase();
+      const existingEmail = await this.userRepository.findOne({
+        where: { email },
+      });
+      if (existingEmail) {
+        throw new ConflictException('A user with this email already exists');
+      }
+    }
+
+    const currentYear = new Date().getFullYear().toString().slice(-2);
+    const count = await this.userRepository.count({
+      where: { role: UserRole.ADMIN },
+    });
+    const memberId = `ATB-${currentYear}-AD-${count + 1}`;
+
+    const rawPassword = dto.password?.trim() || this.generatePassword(dto.fullName, mobile);
+    const hashedPassword = await bcrypt.hash(rawPassword, 12);
+
+    const admin = this.userRepository.create({
+      memberId,
+      fullName: dto.fullName.trim(),
+      mobileNumber: mobile,
+      email: dto.email ? dto.email.trim().toLowerCase() : undefined,
+      password: hashedPassword,
+      role: UserRole.ADMIN,
+      isActive: true,
+      isKycVerified: true,
+      isTwoFactorEnabled: Boolean(dto.isTwoFactorEnabled),
+      permanentAddress: dto.permanentAddress?.trim() || undefined,
+    });
+
+    const savedAdmin = await this.userRepository.save(admin);
+
+    await this.auditLogRepository.save({
+      performedById: currentUserId,
+      action: 'STAFF_ADMIN_CREATED',
+      entity: 'User',
+      entityId: savedAdmin.id,
+      newValue: {
+        memberId: savedAdmin.memberId,
+        fullName: savedAdmin.fullName,
+        role: savedAdmin.role,
+        mobileNumber: savedAdmin.mobileNumber,
+        email: savedAdmin.email,
+      },
+    });
+
+    this.logger.log(
+      `Super admin ${currentUserId} created new admin account ${savedAdmin.memberId}`,
+    );
+
+    return {
+      message: 'Admin account created successfully',
+      user: this.sanitizeUser(savedAdmin),
+      temporaryPassword: dto.password ? undefined : rawPassword,
     };
   }
 }

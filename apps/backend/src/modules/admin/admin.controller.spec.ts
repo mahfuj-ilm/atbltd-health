@@ -21,6 +21,7 @@ describe('AdminController', () => {
     resetStaffPassword: jest.fn(),
     updateStaffStatus: jest.fn(),
     updateStaffSettings: jest.fn(),
+    createAdmin: jest.fn(),
   };
 
   const mockFraudService = {
@@ -186,6 +187,24 @@ describe('AdminController', () => {
         'sa-id',
       );
       expect(result.message).toBe('Staff settings updated successfully');
+    });
+
+    it('calls adminService.createAdmin', async () => {
+      mockAdminService.createAdmin.mockResolvedValueOnce({
+        message: 'Admin account created successfully',
+        user: { id: 'admin-1', memberId: 'ATB-26-AD-1' },
+      });
+
+      const dto = {
+        fullName: 'New Admin',
+        mobileNumber: '01711111111',
+        email: 'admin@atbltd.health',
+      };
+
+      const result = await controller.createAdmin(dto as any, { sub: 'sa-id' } as any);
+
+      expect(mockAdminService.createAdmin).toHaveBeenCalledWith(dto, 'sa-id');
+      expect(result.message).toBe('Admin account created successfully');
     });
   });
 });

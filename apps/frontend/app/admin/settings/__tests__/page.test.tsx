@@ -8,6 +8,7 @@ import {
   resetStaffPassword,
   updateStaffStatus,
   updateStaffSettings,
+  createAdmin,
   StaffUser,
 } from '../../../lib/apiClient';
 
@@ -23,6 +24,7 @@ jest.mock('../../../lib/apiClient', () => {
     resetStaffPassword: jest.fn(),
     updateStaffStatus: jest.fn(),
     updateStaffSettings: jest.fn(),
+    createAdmin: jest.fn(),
   };
 });
 
@@ -359,4 +361,174 @@ describe('StaffSettingsPage', () => {
       });
     }
   });
+
+  it('opens Create Admin modal, validates inputs, and submits new admin successfully', async () => {
+    (getStaffUsers as jest.Mock).mockResolvedValue({
+      users: mockStaffList,
+      total: 3,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+    });
+
+    (createAdmin as jest.Mock).mockResolvedValueOnce({
+      message: 'Admin account created successfully.',
+      user: {
+        id: 'new-ad-1',
+        memberId: 'ATB-26-AD-2',
+        fullName: 'New Operations Admin',
+        mobileNumber: '01711223344',
+        email: 'newadmin@atbltd.health',
+        role: 'admin',
+        isActive: true,
+        isKycVerified: true,
+        isTwoFactorEnabled: true,
+        lastLoginAt: null,
+        createdAt: '2026-10-16T00:00:00Z',
+        updatedAt: '2026-10-16T00:00:00Z',
+      },
+    });
+
+    render(<StaffSettingsPage />);
+    expect(await screen.findByText('Staff Accounts (3)')).toBeInTheDocument();
+
+    const createBtn = screen.getByRole('button', { name: /Create Admin/i });
+    fireEvent.click(createBtn);
+
+    expect(screen.getByText('Create New Admin')).toBeInTheDocument();
+    expect(screen.getByText(/Add an administrator with full operations/i)).toBeInTheDocument();
+
+    const nameInput = screen.getByPlaceholderText('e.g. Operations Officer');
+    const mobileInput = screen.getByPlaceholderText('e.g. 01712345678');
+    const emailInput = screen.getByPlaceholderText('admin@atbltd.health (optional)');
+    const passInput = screen.getByPlaceholderText('Leave blank to auto-generate from name & phone');
+    const addressInput = screen.getByPlaceholderText('Official address or office location (optional)');
+    const twoFactorCheckbox = screen.getByRole('checkbox');
+
+    await userEvent.type(nameInput, 'New Operations Admin');
+    await userEvent.type(mobileInput, '01711223344');
+    await userEvent.type(emailInput, 'newadmin@atbltd.health');
+    await userEvent.type(passInput, 'AdminPass123!');
+    await userEvent.type(addressInput, 'Dhaka, Bangladesh');
+    fireEvent.click(twoFactorCheckbox);
+
+    // Submit form: find Create Admin button inside modal
+    const submitBtn = screen.getAllByRole('button', { name: 'Create Admin' }).pop()!;
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(createAdmin).toHaveBeenCalledWith('mock-sa-token', {
+        fullName: 'New Operations Admin',
+        mobileNumber: '01711223344',
+        email: 'newadmin@atbltd.health',
+        password: 'AdminPass123!',
+        permanentAddress: 'Dhaka, Bangladesh',
+        isTwoFactorEnabled: true,
+      });
+    });
+
+    expect(
+      await screen.findByText(/Admin account created successfully\. \(ID: ATB-26-AD-2\)\./i),
+    ).toBeInTheDocument();
+  });
+
+  it('creates admin with auto-generated temporary password when password is left blank', async () => {
+    (getStaffUsers as jest.Mock).mockResolvedValue({
+      users: mockStaffList,
+      total: 3,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+    });
+
+    (createAdmin as jest.Mock).mockResolvedValueOnce({
+      message: 'Admin account created successfully.',
+      temporaryPassword: 'New223344',
+      user: {
+        id: 'new-ad-2',
+        memberId: 'ATB-26-AD-3',
+        fullName: 'Auto Pass Admin',
+        mobileNumber: '01799223344',
+        role: 'admin',
+        isActive: true,
+      },
+    });
+
+    render(<StaffSettingsPage />);
+    expect(await screen.findByText('Staff Accounts (3)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Create Admin/i }));
+
+    await userEvent.type(screen.getByPlaceholderText('e.g. Operations Officer'), 'Auto Pass Admin');
+    await userEvent.type(screen.getByPlaceholderText('e.g. 01712345678'), '01799223344');
+
+    const submitBtn = screen.getAllByRole('button', { name: 'Create Admin' }).pop()!;
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(createAdmin).toHaveBeenCalledWith('mock-sa-token', {
+        fullName: 'Auto Pass Admin',
+        mobileNumber: '01799223344',
+        email: undefined,
+        password: undefined,
+        permanentAddress: undefined,
+        isTwoFactorEnabled: false,
+      });
+    });
+
+    expect(
+      await screen.findByText(/Auto-generated temporary password: New223344/i),
+    ).toBeInTheDocument();
+  });
+
+  it('displays error in modal if createAdmin API rejects', async () => {
+    (getStaffUsers as jest.Mock).mockResolvedValue({
+      users: mockStaffList,
+      total: 3,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+    });
+
+    (createAdmin as jest.Mock).mockRejectedValueOnce(
+      new Error('A user with this mobile number already exists.'),
+    );
+
+    render(<StaffSettingsPage />);
+    expect(await screen.findByText('Staff Accounts (3)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Create Admin/i }));
+
+    await userEvent.type(screen.getByPlaceholderText('e.g. Operations Officer'), 'Duplicate Admin');
+    await userEvent.type(screen.getByPlaceholderText('e.g. 01712345678'), '01700000001');
+
+    const submitBtn = screen.getAllByRole('button', { name: 'Create Admin' }).pop()!;
+    fireEvent.click(submitBtn);
+
+    expect(
+      await screen.findByText('A user with this mobile number already exists.'),
+    ).toBeInTheDocument();
+  });
+
+  it('closes Create Admin modal on cancel click', async () => {
+    (getStaffUsers as jest.Mock).mockResolvedValue({
+      users: mockStaffList,
+      total: 3,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+    });
+
+    render(<StaffSettingsPage />);
+    expect(await screen.findByText('Staff Accounts (3)')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Create Admin/i }));
+    expect(screen.getByText('Create New Admin')).toBeInTheDocument();
+
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelBtn);
+
+    expect(screen.queryByText('Create New Admin')).not.toBeInTheDocument();
+  });
 });
+

@@ -10,6 +10,7 @@ import {
   resetStaffPassword,
   updateStaffStatus,
   updateStaffSettings,
+  createAdmin,
 } from '../apiClient';
 
 describe('apiClient', () => {
@@ -271,6 +272,36 @@ describe('apiClient', () => {
           body: JSON.stringify({
             fullName: 'Updated Name',
             isTwoFactorEnabled: true,
+          }),
+        }),
+      );
+      expect(res).toEqual(mockResult);
+    });
+
+    it('creates an admin account', async () => {
+      const mockResult = {
+        message: 'Admin account created successfully',
+        user: { id: 'admin-1', memberId: 'ATB-26-AD-1', role: 'admin' },
+        temporaryPassword: 'adm345678',
+      };
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: jest.fn().mockResolvedValue(mockResult),
+      });
+
+      const res = await createAdmin('token-123', {
+        fullName: 'New Admin',
+        mobileNumber: '01712345678',
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/admin/staff/admins'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            fullName: 'New Admin',
+            mobileNumber: '01712345678',
           }),
         }),
       );
