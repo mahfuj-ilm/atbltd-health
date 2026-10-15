@@ -173,11 +173,18 @@ jobs:
       - name: Generate workspace dependency audit artifact (JSON)
         continue-on-error: true
         run: npm audit --workspaces --audit-level=high --json > npm-audit-report.json
-      - name: Upload dependency audit artifact
+      - name: Report dependency freshness across workspaces
+        run: |
+          echo "=== Dependency Freshness Report ==="
+          npm outdated --workspaces || true
+          npm outdated --workspaces --json > npm-outdated-report.json || true
+      - name: Upload dependency audit and freshness artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: npm-audit-report
-          path: npm-audit-report.json
+          name: dependency-reports
+          path: |
+            npm-audit-report.json
+            npm-outdated-report.json
           if-no-files-found: warn
 
   secret-scan:
