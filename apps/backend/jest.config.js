@@ -20,6 +20,7 @@ module.exports = {
     '!scripts/**',
   ],
   coverageDirectory: '../coverage',
+  coverageReporters: ['text', 'lcov', 'json-summary'],
   testEnvironment: 'node',
   setupFiles: ['<rootDir>/../test/unit-network-guard.js'],
   coverageThreshold: {

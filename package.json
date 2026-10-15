@@ -31,7 +31,9 @@
     "typecheck:backend": "npm run typecheck --workspace=@atbltd-health/backend",
     "typecheck:frontend": "npm run typecheck --workspace=@atbltd-health/frontend",
     "seed": "npm run seed --workspace=@atbltd-health/backend",
-    "seed:ref": "npm run seed:ref --workspace=@atbltd-health/backend"
+    "seed:ref": "npm run seed:ref --workspace=@atbltd-health/backend",
+    "coverage:check": "node scripts/check-coverage.mjs",
+    "test:ci": "npm run test:cov && npm run coverage:check"
   },
   "dependencies": {
     "class-transformer": "0.5.1",

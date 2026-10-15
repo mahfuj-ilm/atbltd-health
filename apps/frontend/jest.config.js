@@ -21,6 +21,7 @@ const customJestConfig = {
     '!app/i18n/**',
     '!app/lib/constants.ts',
   ],
+  coverageReporters: ['text', 'lcov', 'json-summary'],
   coverageThreshold: {
     global: {
       lines: 70,

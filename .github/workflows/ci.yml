@@ -79,16 +79,11 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: Install dependencies
         run: npm ci
-      - name: Run Jest unit tests with coverage
+      - name: Run Jest unit tests with coverage (fails below coverageThreshold)
         id: jest
         run: npm run test:cov
-      - name: Enforce coverage threshold exit gate
-        if: success()
-        run: |
-          echo "Verifying Jest coverage reports and threshold gates..."
-          test -f apps/backend/coverage/lcov-report/index.html || { echo "Backend coverage missing"; exit 1; }
-          test -f apps/frontend/coverage/lcov-report/index.html || { echo "Frontend coverage missing"; exit 1; }
-          echo "Coverage gates successfully satisfied."
+      - name: Enforce numeric coverage thresholds
+        run: npm run coverage:check
       - name: Upload combined coverage reports
         if: always()
         uses: actions/upload-artifact@v4
