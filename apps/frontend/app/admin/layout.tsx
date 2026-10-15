@@ -14,6 +14,7 @@ import {
   Building2,
   Clock,
   User,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import NotificationBell from '../components/NotificationBell';
@@ -94,6 +95,12 @@ const navItems = [
     roles: ['super_admin', 'admin', 'owner', 'agent'],
   },
   { label: 'Reports', href: '/admin/reports', icon: FileText, roles: ['super_admin', 'admin'] },
+  {
+    label: 'Staff Settings',
+    href: '/admin/settings',
+    icon: Settings,
+    roles: ['super_admin'],
+  },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

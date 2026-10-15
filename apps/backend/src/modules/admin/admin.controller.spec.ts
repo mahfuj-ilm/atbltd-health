@@ -17,6 +17,10 @@ describe('AdminController', () => {
     getPendingPayments: jest.fn(),
     verifyPayment: jest.fn(),
     getAuditLogs: jest.fn(),
+    getStaffUsers: jest.fn(),
+    resetStaffPassword: jest.fn(),
+    updateStaffStatus: jest.fn(),
+    updateStaffSettings: jest.fn(),
   };
 
   const mockFraudService = {
@@ -115,6 +119,73 @@ describe('AdminController', () => {
       const result = await controller.checkUserFraud('user-123');
       expect(result).toEqual({ risk: 'low' });
       expect(fraudService.checkUser).toHaveBeenCalledWith('user-123');
+    });
+  });
+
+  describe('Staff Management', () => {
+    it('calls adminService.getStaffUsers', async () => {
+      mockAdminService.getStaffUsers.mockResolvedValueOnce({ users: [], total: 0 });
+
+      const result = await controller.getStaff(1, 20, UserRole.ADMIN, 'test');
+
+      expect(mockAdminService.getStaffUsers).toHaveBeenCalledWith({
+        page: 1,
+        limit: 20,
+        role: UserRole.ADMIN,
+        search: 'test',
+      });
+      expect(result).toEqual({ users: [], total: 0 });
+    });
+
+    it('calls adminService.resetStaffPassword', async () => {
+      mockAdminService.resetStaffPassword.mockResolvedValueOnce({
+        message: 'Staff password reset successfully',
+      });
+
+      const result = await controller.resetStaffPassword(
+        'target-id',
+        { newPassword: 'newPassword123' },
+        { sub: 'sa-id' } as any,
+      );
+
+      expect(mockAdminService.resetStaffPassword).toHaveBeenCalledWith(
+        'target-id',
+        'newPassword123',
+        'sa-id',
+      );
+      expect(result.message).toBe('Staff password reset successfully');
+    });
+
+    it('calls adminService.updateStaffStatus', async () => {
+      mockAdminService.updateStaffStatus.mockResolvedValueOnce({
+        message: 'Staff user deactivated successfully',
+      });
+
+      const result = await controller.updateStaffStatus('target-id', { isActive: false }, {
+        sub: 'sa-id',
+      } as any);
+
+      expect(mockAdminService.updateStaffStatus).toHaveBeenCalledWith('target-id', false, 'sa-id');
+      expect(result.message).toBe('Staff user deactivated successfully');
+    });
+
+    it('calls adminService.updateStaffSettings', async () => {
+      mockAdminService.updateStaffSettings.mockResolvedValueOnce({
+        message: 'Staff settings updated successfully',
+      });
+
+      const result = await controller.updateStaffSettings(
+        'target-id',
+        { fullName: 'Updated Name', isTwoFactorEnabled: true },
+        { sub: 'sa-id' } as any,
+      );
+
+      expect(mockAdminService.updateStaffSettings).toHaveBeenCalledWith(
+        'target-id',
+        { fullName: 'Updated Name', isTwoFactorEnabled: true },
+        'sa-id',
+      );
+      expect(result.message).toBe('Staff settings updated successfully');
     });
   });
 });
