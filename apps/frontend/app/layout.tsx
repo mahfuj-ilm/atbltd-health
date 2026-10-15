@@ -4,8 +4,8 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'Sustho Thaki BD Ltd (STBL)',
-  description: 'Healthcare support from Sustho Thaki BD Ltd (STBL).',
+  title: 'Sushtho Thaki BD Ltd. (STBL)',
+  description: 'Healthcare support from Sushtho Thaki BD Ltd. (STBL).',
   icons: {
     icon: '/images/stbl_logo.png',
     shortcut: '/images/stbl_logo.png',

@@ -40,7 +40,7 @@ export default function Footer({ strings }: FooterProps) {
             <div className="footer-brand">
               {/* <Image
                 src="/images/stbl_logo.png"
-                alt="Sustho Thaki BD Ltd"
+                alt="Sushtho Thaki BD Ltd."
                 width={370}
                 height={215}
                 className="object-contain object-left"
@@ -120,7 +120,7 @@ export default function Footer({ strings }: FooterProps) {
           {/* Footer Bottom with Powered By */}
           <div className="footer-bottom">
             <span>
-              © {new Date().getFullYear()} Sustho Thaki BD Ltd. {strings.rights}
+              © {new Date().getFullYear()} Sushtho Thaki BD Ltd. {strings.rights}
             </span>
 
             <a

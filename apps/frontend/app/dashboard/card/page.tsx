@@ -72,7 +72,7 @@ export default function DigitalCardPage() {
                 STBL
               </p>
               <p className="text-white font-bold text-lg mt-0.5">
-                Sustho Thaki BD Ltd
+                Sushtho Thaki BD Ltd.
               </p>
             </div>
             <Shield size={28} className="text-red-400/60" />

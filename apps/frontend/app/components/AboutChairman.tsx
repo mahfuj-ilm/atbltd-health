@@ -78,8 +78,8 @@ export default function AboutChairman({ strings }: AboutChairmanProps) {
               />
             </div>
             <div className="absolute bottom-4 left-4 right-4 bg-black/50 backdrop-blur-md rounded-xl p-4">
-              <p className="text-white font-bold text-lg">এ.কে.এম মশিউর রহমান</p>
-              <p className="text-red-300 text-sm">চেয়ারম্যান, Sustho Thaki BD Ltd</p>
+              <p className="text-white font-bold text-lg">{strings.title}</p>
+              <p className="text-red-300 text-sm">{strings.roles.chairman}</p>
             </div>
           </motion.div>
 
