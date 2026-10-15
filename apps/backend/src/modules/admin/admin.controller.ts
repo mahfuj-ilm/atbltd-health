@@ -22,6 +22,7 @@ import { FraudService } from './fraud.service';
 import { ResetStaffPasswordDto } from './dto/reset-staff-password.dto';
 import { UpdateStaffStatusDto } from './dto/update-staff-status.dto';
 import { UpdateStaffSettingsDto } from './dto/update-staff-settings.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -104,7 +105,7 @@ export class AdminController {
    */
   @Get('fraud-check')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  async runFraudChecks(@CurrentUser() user: JwtPayload) {
+  async runFraudChecks(@CurrentUser() _user: JwtPayload) {
     // Admin gets view-only results, SA gets full results with action buttons
     return this.fraudService.runFraudChecks();
   }
@@ -173,5 +174,15 @@ export class AdminController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.adminService.updateStaffSettings(id, dto, user.sub);
+  }
+
+  /**
+   * POST /api/admin/staff/admins
+   * Create a new Admin account (SUPER_ADMIN only)
+   */
+  @Post('staff/admins')
+  @Roles(UserRole.SUPER_ADMIN)
+  async createAdmin(@Body() dto: CreateAdminDto, @CurrentUser() user: JwtPayload) {
+    return this.adminService.createAdmin(dto, user.sub);
   }
 }

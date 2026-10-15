@@ -22,6 +22,7 @@ import {
   Mail,
   ChevronLeft,
   ChevronRight,
+  UserPlus,
 } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import {
@@ -30,6 +31,7 @@ import {
   resetStaffPassword,
   updateStaffStatus,
   updateStaffSettings,
+  createAdmin,
   UpdateStaffSettingsPayload,
 } from '../../lib/apiClient';
 
@@ -77,6 +79,20 @@ export default function StaffSettingsPage() {
   const [editForm, setEditForm] = useState<UpdateStaffSettingsPayload>({});
   const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+
+  // Modal 4: Create Admin
+  const [showCreateAdminModal, setShowCreateAdminModal] = useState(false);
+  const [createAdminForm, setCreateAdminForm] = useState({
+    fullName: '',
+    mobileNumber: '',
+    email: '',
+    password: '',
+    permanentAddress: '',
+    isTwoFactorEnabled: false,
+  });
+  const [showCreateAdminPassword, setShowCreateAdminPassword] = useState(false);
+  const [isSubmittingCreateAdmin, setIsSubmittingCreateAdmin] = useState(false);
+  const [createAdminError, setCreateAdminError] = useState<string | null>(null);
 
   const fetchStaff = useCallback(async () => {
     if (!token) return;
@@ -194,6 +210,64 @@ export default function StaffSettingsPage() {
     }
   };
 
+  // Handle Create Admin Submission
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    if (!createAdminForm.fullName.trim()) {
+      setCreateAdminError('Full name is required');
+      return;
+    }
+
+    if (!createAdminForm.mobileNumber.trim()) {
+      setCreateAdminError('Mobile number is required');
+      return;
+    }
+
+    if (createAdminForm.password && createAdminForm.password.length < 6) {
+      setCreateAdminError('Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsSubmittingCreateAdmin(true);
+    setCreateAdminError(null);
+
+    try {
+      const res = await createAdmin(token, {
+        fullName: createAdminForm.fullName.trim(),
+        mobileNumber: createAdminForm.mobileNumber.trim(),
+        email: createAdminForm.email.trim() || undefined,
+        password: createAdminForm.password.trim() || undefined,
+        permanentAddress: createAdminForm.permanentAddress.trim() || undefined,
+        isTwoFactorEnabled: createAdminForm.isTwoFactorEnabled,
+      });
+
+      const tempNotice = res.temporaryPassword
+        ? ` Auto-generated temporary password: ${res.temporaryPassword}`
+        : '';
+      setSuccessMessage(
+        `${res.message || 'Admin account created successfully.'} (ID: ${res.user.memberId}).${tempNotice}`,
+      );
+
+      setShowCreateAdminModal(false);
+      setCreateAdminForm({
+        fullName: '',
+        mobileNumber: '',
+        email: '',
+        password: '',
+        permanentAddress: '',
+        isTwoFactorEnabled: false,
+      });
+      await fetchStaff();
+      setTimeout(() => setSuccessMessage(null), 8000);
+    } catch (err: any) {
+      setCreateAdminError(err?.message || 'Failed to create admin account');
+    } finally {
+      setIsSubmittingCreateAdmin(false);
+    }
+  };
+
   // Check role: strictly super_admin
   if (currentUser && currentUser.role !== 'super_admin') {
     return (
@@ -224,14 +298,27 @@ export default function StaffSettingsPage() {
             across all Admins, Owners, and Agents.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void fetchStaff()}
-          className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm self-start sm:self-auto"
-        >
-          <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setCreateAdminError(null);
+              setShowCreateAdminModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-white bg-[#0A2A5E] hover:bg-[#081f42] rounded-lg transition-colors shadow-sm"
+          >
+            <UserPlus size={15} />
+            Create Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => void fetchStaff()}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <RefreshCw size={15} className={isLoading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Notifications */}
@@ -290,6 +377,19 @@ export default function StaffSettingsPage() {
               {tab.label}
             </button>
           ))}
+          {roleFilter === 'admin' && (
+            <button
+              type="button"
+              onClick={() => {
+                setCreateAdminError(null);
+                setShowCreateAdminModal(true);
+              }}
+              className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
+            >
+              <UserPlus size={13} />
+              + Create Admin
+            </button>
+          )}
         </div>
 
         {/* Search input */}
@@ -822,6 +922,180 @@ export default function StaffSettingsPage() {
                 >
                   {isSubmittingSettings && <Loader2 size={14} className="animate-spin" />}
                   Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 4: Create Admin Modal */}
+      {showCreateAdminModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
+                  <UserPlus size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Create New Admin</h3>
+                  <p className="text-xs text-gray-500">
+                    Add an administrator with full operations management privileges
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateAdminModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateAdmin} className="space-y-4 mt-4">
+              {createAdminError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  <span>{createAdminError}</span>
+                </div>
+              )}
+
+              {/* Full Name */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Operations Officer"
+                  value={createAdminForm.fullName}
+                  onChange={(e) =>
+                    setCreateAdminForm({ ...createAdminForm, fullName: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
+                  required
+                />
+              </div>
+
+              {/* Mobile Number */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Mobile Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 01712345678"
+                  value={createAdminForm.mobileNumber}
+                  onChange={(e) =>
+                    setCreateAdminForm({ ...createAdminForm, mobileNumber: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
+                  required
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="admin@atbltd.health (optional)"
+                  value={createAdminForm.email}
+                  onChange={(e) =>
+                    setCreateAdminForm({ ...createAdminForm, email: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-gray-700">
+                    Initial Password
+                  </label>
+                  <span className="text-[11px] text-gray-400">Optional</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showCreateAdminPassword ? 'text' : 'password'}
+                    placeholder="Leave blank to auto-generate from name & phone"
+                    value={createAdminForm.password}
+                    onChange={(e) =>
+                      setCreateAdminForm({ ...createAdminForm, password: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateAdminPassword(!showCreateAdminPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showCreateAdminPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-500 mt-1">
+                  If left empty, a secure temporary password will be auto-generated and displayed.
+                </p>
+              </div>
+
+              {/* Permanent Address */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  placeholder="Official address or office location (optional)"
+                  value={createAdminForm.permanentAddress}
+                  onChange={(e) =>
+                    setCreateAdminForm({ ...createAdminForm, permanentAddress: e.target.value })
+                  }
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
+                />
+              </div>
+
+              {/* 2FA Toggle */}
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                  <div className="text-xs font-semibold text-gray-800">
+                    Two-Factor Authentication
+                  </div>
+                  <div className="text-[11px] text-gray-500">Require OTP code upon admin login</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={Boolean(createAdminForm.isTwoFactorEnabled)}
+                  onChange={(e) =>
+                    setCreateAdminForm({
+                      ...createAdminForm,
+                      isTwoFactorEnabled: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 text-[#0A2A5E] rounded border-gray-300 focus:ring-[#0A2A5E]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateAdminModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingCreateAdmin}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#0A2A5E] hover:bg-[#081f42] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isSubmittingCreateAdmin && <Loader2 size={14} className="animate-spin" />}
+                  Create Admin
                 </button>
               </div>
             </form>
