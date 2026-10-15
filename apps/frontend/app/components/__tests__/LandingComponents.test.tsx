@@ -78,7 +78,10 @@ describe('Landing Components', () => {
 
       expect(screen.getByText(en.aboutChairman.eyebrow)).toBeInTheDocument();
       expect(screen.getByText(en.aboutChairman.currentRoles)).toBeInTheDocument();
-      expect(screen.getByText(en.aboutChairman.roles.chairman)).toBeInTheDocument();
+      expect(screen.getAllByText(en.aboutChairman.roles.chairman).length).toBeGreaterThan(0);
+      expect(screen.getByText(en.aboutChairman.roles.career1)).toBeInTheDocument();
+      expect(screen.getByText(en.aboutChairman.roles.career2)).toBeInTheDocument();
+      expect(screen.getByText(en.aboutChairman.roles.career3)).toBeInTheDocument();
     });
   });
 
