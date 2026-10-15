@@ -1,7 +1,7 @@
 const nextJest = require('next/jest');
 
 const createJestConfig = nextJest({
-  dir: './',
+  dir: __dirname,
 });
 
 const customJestConfig = {
@@ -21,6 +21,7 @@ const customJestConfig = {
     '!app/i18n/**',
     '!app/lib/constants.ts',
   ],
+  coverageReporters: ['text', 'lcov', 'json-summary'],
   coverageThreshold: {
     global: {
       lines: 70,
