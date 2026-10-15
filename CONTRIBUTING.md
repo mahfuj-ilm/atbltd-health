@@ -113,9 +113,12 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 ### Standard Suite
 
 ```bash
-npm test
-npm run test:cov
+npm test             # root Jest projects: backend + frontend in one run
+npm run test:ci      # coverage + numeric threshold gate, same as CI
 ```
+
+Coverage must not drop below the `coverageThreshold` in each workspace's
+`jest.config.js`; `npm run coverage:check` prints actual vs. minimum per metric.
 
 ### Backend
 

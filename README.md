@@ -13,6 +13,7 @@ stays.
 ```text
 atbltd-health/
 ├── package-lock.json               # ✅ Root workspace lockfile
+├── jest.config.js                  # ✅ Root Jest projects (runs backend + frontend suites)
 ├── apps/
 │   ├── backend/                    # NestJS API (port 3000)
 │   │   ├── package.json
@@ -38,7 +39,7 @@ atbltd-health/
 │       ├── .env.example            # ✅ Frontend env vars
 │       ├── eslint.config.mjs       # ✅ Frontend ESLint 9 flat config
 │       ├── .prettierrc             # ✅ Frontend prettier
-│       ├── jest.config.js          # ✅ Frontend test config (>70% coverage threshold)
+│       ├── jest.config.js          # ✅ Frontend test config & coverage thresholds
 │       ├── jest.setup.js           # ✅ Test environment & motion mocks
 │       └── app/
 │           ├── admin/              # Admin/Owner/Agent dashboard
@@ -49,7 +50,8 @@ atbltd-health/
 │           ├── i18n/               # Bengali/English translations
 │           └── lib/                # API helpers & auth context
 ├── scripts/                        # ✅ Repository automation & operational scripts
-│   └── bootstrap.sh                # ✅ Single-command setup for fresh checkouts
+│   ├── bootstrap.sh                # ✅ Single-command setup for fresh checkouts
+│   └── check-coverage.mjs          # ✅ Numeric coverage gate used by CI
 ├── docs/                           # ✅ Repository policies & operational documentation
 │   ├── branch-protection.md        # ✅ Branch protection policy & CI mapping
 │   └── fresh-clone-verification.md # ✅ Clean checkout verification audit
@@ -190,11 +192,24 @@ npm run seed:ref
 
 ## Running Tests
 
-Execute the complete test suite from the repository root:
+Tests use **Jest**. A fresh clone needs only `npm ci` — no `.env`, Docker, or
+database is required for unit tests.
 
 ```bash
-npm test
-npm run test:cov
+npm ci
+npm test            # root Jest projects: 67 suites / 425 tests (backend + frontend)
+```
+
+`npm test` runs `jest` with the root [`jest.config.js`](jest.config.js), which
+loads `apps/backend` and `apps/frontend` as Jest projects. `npx jest` works the
+same way.
+
+Coverage and the full quality gate:
+
+```bash
+npm run test:cov       # per-workspace coverage; Jest exits non-zero below coverageThreshold
+npm run coverage:check # numeric gate: compares coverage-summary.json with each jest.config.js
+npm run test:ci        # test:cov + coverage:check (exactly what CI runs)
 npm run typecheck
 npm run lint
 npm run build
@@ -210,14 +225,20 @@ npm run test:e2e:backend
 
 ### Isolated Zero-Network Test Run
 
-Run unit test suites without Docker, PostgreSQL, SMS gateways, or network calls:
+Run backend unit suites with outbound `fetch` blocked by
+`apps/backend/test/unit-network-guard.js`:
 
 ```bash
 npm run test:isolated
 ```
 
-Backend unit tests mock repositories and external gateways. For database-backed
-e2e tests, start the disposable test database:
+| Test files                                  | Needs Docker/Postgres? | External services                     |
+| ------------------------------------------- | ---------------------- | ------------------------------------- |
+| `apps/backend/src/**/*.spec.ts` (28 suites) | No                     | Repositories, SMS and payment mocked  |
+| `apps/frontend/app/**/__tests__/*` (39)     | No                     | API calls mocked; runs in jsdom       |
+| `apps/backend/test/*.e2e-spec.ts` (2)       | **Yes**                | Disposable Postgres via compose       |
+
+Only the e2e suites need the disposable test database:
 
 ```bash
 docker compose -f docker-compose.test.yml up -d --wait
@@ -276,8 +297,9 @@ npm run typecheck
 - Sentry captures all unhandled 5xx exceptions and operational faults.
 - Prometheus exposes application telemetry and runtime metrics.
 - Backend Jest enforces minimum 70% coverage for branches, functions, lines, and
-  statements. Frontend Jest enforces minimum thresholds of 52% for branches,
-  50% for functions, 61% for lines, and 59% for statements.
+  statements. Frontend Jest enforces minimum 70% lines, 70% statements, 60%
+  functions, and 55% branches. CI re-checks both numerically with
+  `scripts/check-coverage.mjs` and fails the build on any regression.
 - Financial approval follows the Maker-Checker workflow.
 - Production deploys require passing CI and automated post-deploy health validation.
 
