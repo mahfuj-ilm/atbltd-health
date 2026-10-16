@@ -2,7 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] — 2026-08-29
+## [0.4.0] — 2026-10-16
+
+### Added
+
+- Super Admin Staff Settings & Management:
+  - Dedicated staff settings page (`/admin/settings`) restricted solely to Super Admin.
+  - Staff credential reset and secure temporary password generation.
+  - Account status toggling (activation/deactivation) with self-deactivation protection.
+  - Admin creation endpoint (`POST /api/admin/staff/admins`) with sequential `ATB-{YY}-AD-{N}` ID scheme and validation.
+- Test Coverage & Quality Gates:
+  - Expanded test suite to 70 suites / 480 tests across backend and frontend.
+  - Enforced automated numeric coverage gate in CI (`scripts/check-coverage.mjs`).
+- Brand & Localization:
+  - Standardized brand spelling to "Sushtho Thaki BD Ltd." across docs and i18n bundles.
+  - Updated Chairman career positions in English and Bengali.
+
+## [0.3.0] — 2026-09-05
 
 ### Reliability and Security
 

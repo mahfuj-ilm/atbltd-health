@@ -1,6 +1,6 @@
 {
   "name": "atbltd-health-monorepo",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "private": true,
   "description": "Healthcare fintech platform for Bangladesh with NestJS backend and Next.js frontend.",
   "license": "UNLICENSED",

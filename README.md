@@ -197,7 +197,7 @@ database is required for unit tests.
 
 ```bash
 npm ci
-npm test            # root Jest projects: 69 suites / 432 tests (backend + frontend)
+npm test            # root Jest projects: 70 suites / 480 tests (backend + frontend)
 ```
 
 `npm test` runs `jest` with the root [`jest.config.js`](jest.config.js), which
@@ -235,7 +235,7 @@ npm run test:isolated
 | Test files                                  | Needs Docker/Postgres? | External services                     |
 | ------------------------------------------- | ---------------------- | ------------------------------------- |
 | `apps/backend/src/**/*.spec.ts` (29 suites) | No                     | Repositories, SMS and payment mocked  |
-| `apps/frontend/app/**/__tests__/*` (40)     | No                     | API calls mocked; runs in jsdom       |
+| `apps/frontend/app/**/__tests__/*` (41)     | No                     | API calls mocked; runs in jsdom       |
 | `apps/backend/test/*.e2e-spec.ts` (2)       | **Yes**                | Disposable Postgres via compose       |
 
 Only the e2e suites need the disposable test database:
@@ -365,4 +365,4 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 
-Proprietary — Sustho Thaki BD Ltd. All rights reserved.
+Proprietary — Sushtho Thaki BD Ltd. All rights reserved.
