@@ -19,6 +19,7 @@
     "lint": "npm run lint:backend && npm run lint:frontend",
     "lint:backend": "npm run lint --workspace=@atbltd-health/backend",
     "lint:frontend": "npm run lint --workspace=@atbltd-health/frontend",
+    "format:check": "npm run format:check --workspace=@atbltd-health/backend",
     "test": "jest",
     "test:backend": "npm run test --workspace=@atbltd-health/backend",
     "test:frontend": "npm run test --workspace=@atbltd-health/frontend",

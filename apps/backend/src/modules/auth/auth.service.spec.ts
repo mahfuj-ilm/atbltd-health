@@ -19,61 +19,26 @@ describe('AuthService', () => {
   let service: AuthService;
 
   // Mock repositories
-  const mockUserRepository = {
-    findOne: jest.fn(),
-    save: jest.fn(),
-    create: jest.fn(),
-  };
-
-  const mockMembershipRepository = {
-    findOne: jest.fn(),
-    save: jest.fn(),
-    create: jest.fn(),
-  };
-
-  const mockPaymentRepository = {
-    findOne: jest.fn(),
-    save: jest.fn(),
-    create: jest.fn(),
-  };
-
-  const mockAuditLogRepository = {
-    save: jest.fn(),
-    create: jest.fn(),
-  };
-
-  const mockAgentRepository = {
-    findOne: jest.fn(),
-    save: jest.fn(),
-  };
-
-  const mockJwtService = {
-    sign: jest.fn().mockReturnValue('mock-jwt-token'),
-  };
-
-  const mockNotificationService = {
-    notifyRoles: jest.fn(),
-    notifyUser: jest.fn(),
-  };
-
+  const mockUserRepository = { findOne: jest.fn(), save: jest.fn(), create: jest.fn() };
+  const mockMembershipRepository = { findOne: jest.fn(), save: jest.fn(), create: jest.fn() };
+  const mockPaymentRepository = { findOne: jest.fn(), save: jest.fn(), create: jest.fn() };
+  const mockAuditLogRepository = { save: jest.fn(), create: jest.fn() };
+  const mockAgentRepository = { findOne: jest.fn(), save: jest.fn() };
+  const mockJwtService = { sign: jest.fn().mockReturnValue('mock-jwt-token') };
+  const mockNotificationService = { notifyRoles: jest.fn(), notifyUser: jest.fn() };
   const mockOtpService = {
     issueMemberOtp: jest.fn(),
     issueStaffOtp: jest.fn(),
     verifyMemberOtp: jest.fn(),
     verifyStaffOtp: jest.fn(),
-    sendMemberOtp: jest.fn().mockResolvedValue({
-      success: true,
-      message: 'OTP sent successfully. Valid for 5 minutes.',
-    }),
-    sendStaffOtp: jest.fn().mockResolvedValue({
-      success: true,
-      message: 'OTP sent to your mobile number',
-    }),
+    sendMemberOtp: jest
+      .fn()
+      .mockResolvedValue({ success: true, message: 'OTP sent successfully. Valid for 5 minutes.' }),
+    sendStaffOtp: jest
+      .fn()
+      .mockResolvedValue({ success: true, message: 'OTP sent to your mobile number' }),
   };
-
-  const mockPaymentRoutingService = {
-    getRecipientAccount: jest.fn(),
-  };
+  const mockPaymentRoutingService = { getRecipientAccount: jest.fn() };
 
   const mockDataSource = {
     createQueryRunner: jest.fn().mockReturnValue({
@@ -101,18 +66,9 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
-        {
-          provide: getRepositoryToken(Membership),
-          useValue: mockMembershipRepository,
-        },
-        {
-          provide: getRepositoryToken(Payment),
-          useValue: mockPaymentRepository,
-        },
-        {
-          provide: getRepositoryToken(AuditLog),
-          useValue: mockAuditLogRepository,
-        },
+        { provide: getRepositoryToken(Membership), useValue: mockMembershipRepository },
+        { provide: getRepositoryToken(Payment), useValue: mockPaymentRepository },
+        { provide: getRepositoryToken(AuditLog), useValue: mockAuditLogRepository },
         { provide: getRepositoryToken(Agent), useValue: mockAgentRepository },
         { provide: JwtService, useValue: mockJwtService },
         { provide: DataSource, useValue: mockDataSource },
@@ -128,41 +84,22 @@ describe('AuthService', () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
-
-    mockUserRepository.findOne.mockReset();
+    [
+      mockUserRepository,
+      mockMembershipRepository,
+      mockPaymentRepository,
+      mockAuditLogRepository,
+      mockAgentRepository,
+    ].forEach((repo) => {
+      Object.values(repo).forEach((fn: any) => fn?.mockReset?.());
+    });
     mockUserRepository.findOne.mockImplementation(() => Promise.resolve(undefined));
-    mockUserRepository.save.mockReset();
-    mockUserRepository.create.mockReset();
-
-    mockMembershipRepository.findOne.mockReset();
-    mockMembershipRepository.save.mockReset();
-    mockMembershipRepository.create.mockReset();
-
-    mockPaymentRepository.findOne.mockReset();
-    mockPaymentRepository.save.mockReset();
-    mockPaymentRepository.create.mockReset();
-
-    mockAuditLogRepository.save.mockReset();
-    mockAuditLogRepository.create.mockReset();
-
-    mockAgentRepository.findOne.mockReset();
-    mockAgentRepository.save.mockReset();
-
-    mockNotificationService.notifyRoles.mockReset();
-    mockNotificationService.notifyUser.mockReset();
-
-    mockOtpService.issueMemberOtp.mockReset();
-    mockOtpService.issueStaffOtp.mockReset();
-    mockOtpService.verifyMemberOtp.mockReset();
-    mockOtpService.verifyStaffOtp.mockReset();
-    mockOtpService.sendMemberOtp.mockReset();
-    mockOtpService.sendStaffOtp.mockReset();
-
+    [mockNotificationService, mockOtpService].forEach((svc) => {
+      Object.values(svc).forEach((fn: any) => fn?.mockReset?.());
+    });
     mockPaymentRoutingService.getRecipientAccount.mockReset();
     mockPaymentRoutingService.getRecipientAccount.mockImplementation((method) => {
-      if (method === 'paypal') {
-        throw new BadRequestException('Invalid payment method');
-      }
+      if (method === 'paypal') throw new BadRequestException('Invalid payment method');
       return '01XXXXXXXXX';
     });
   });

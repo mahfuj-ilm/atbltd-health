@@ -64,6 +64,21 @@ export interface UpdateClaimStatusPayload {
   notes?: string;
 }
 
+export interface ApiError {
+  message: string;
+  statusCode?: number;
+  status?: number;
+  error?: string;
+}
+
+export function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return 'An unexpected error occurred';
+}
+
 /**
  * Standard typed request helper wrapping fetch with structured logging and error handling
  */
@@ -252,14 +267,10 @@ export async function resetStaffPassword(
   userId: string,
   newPassword: string,
 ): Promise<{ message: string; memberId?: string }> {
-  return request<{ message: string; memberId?: string }>(
-    `/admin/staff/${userId}/password`,
-    token,
-    {
-      method: 'PUT',
-      body: JSON.stringify({ newPassword }),
-    },
-  );
+  return request<{ message: string; memberId?: string }>(`/admin/staff/${userId}/password`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ newPassword }),
+  });
 }
 
 export async function updateStaffStatus(
@@ -267,14 +278,10 @@ export async function updateStaffStatus(
   userId: string,
   isActive: boolean,
 ): Promise<{ message: string; user?: StaffUser }> {
-  return request<{ message: string; user?: StaffUser }>(
-    `/admin/staff/${userId}/status`,
-    token,
-    {
-      method: 'PUT',
-      body: JSON.stringify({ isActive }),
-    },
-  );
+  return request<{ message: string; user?: StaffUser }>(`/admin/staff/${userId}/status`, token, {
+    method: 'PUT',
+    body: JSON.stringify({ isActive }),
+  });
 }
 
 export async function updateStaffSettings(
@@ -282,14 +289,10 @@ export async function updateStaffSettings(
   userId: string,
   payload: UpdateStaffSettingsPayload,
 ): Promise<{ message: string; user?: StaffUser }> {
-  return request<{ message: string; user?: StaffUser }>(
-    `/admin/staff/${userId}`,
-    token,
-    {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    },
-  );
+  return request<{ message: string; user?: StaffUser }>(`/admin/staff/${userId}`, token, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
 }
 
 export interface CreateAdminPayload {
@@ -301,11 +304,17 @@ export interface CreateAdminPayload {
   isTwoFactorEnabled?: boolean;
 }
 
+export interface CreateAdminResponse {
+  message: string;
+  user: StaffUser;
+  temporaryPassword?: string;
+}
+
 export async function createAdmin(
   token: string,
   payload: CreateAdminPayload,
-): Promise<{ message: string; user: StaffUser; temporaryPassword?: string }> {
-  return request<{ message: string; user: StaffUser; temporaryPassword?: string }>(
+): Promise<CreateAdminResponse> {
+  return request<CreateAdminResponse>(
     '/admin/staff/admins',
     token,
     {
@@ -314,4 +323,3 @@ export async function createAdmin(
     },
   );
 }
-
