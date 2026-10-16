@@ -11,8 +11,6 @@ import {
   UserX,
   Settings,
   RefreshCw,
-  Eye,
-  EyeOff,
   CheckCircle2,
   AlertTriangle,
   X,
@@ -28,12 +26,13 @@ import AdminTable from '../components/AdminTable';
 import {
   StaffUser,
   getStaffUsers,
-  resetStaffPassword,
-  updateStaffStatus,
-  updateStaffSettings,
-  createAdmin,
-  UpdateStaffSettingsPayload,
+  getErrorMessage,
+  CreateAdminResponse,
 } from '../../lib/apiClient';
+import ResetPasswordModal from './components/ResetPasswordModal';
+import StatusToggleModal from './components/StatusToggleModal';
+import EditSettingsModal from './components/EditSettingsModal';
+import CreateAdminModal from './components/CreateAdminModal';
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin',
@@ -62,37 +61,11 @@ export default function StaffSettingsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Modal 1: Reset Password
+  // Modals state
   const [passwordModalUser, setPasswordModalUser] = useState<StaffUser | null>(null);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-
-  // Modal 2: Toggle Status (Activate / Deactivate)
   const [statusModalUser, setStatusModalUser] = useState<StaffUser | null>(null);
-  const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
-
-  // Modal 3: Edit Staff Settings
   const [editSettingsModalUser, setEditSettingsModalUser] = useState<StaffUser | null>(null);
-  const [editForm, setEditForm] = useState<UpdateStaffSettingsPayload>({});
-  const [isSubmittingSettings, setIsSubmittingSettings] = useState(false);
-  const [settingsError, setSettingsError] = useState<string | null>(null);
-
-  // Modal 4: Create Admin
   const [showCreateAdminModal, setShowCreateAdminModal] = useState(false);
-  const [createAdminForm, setCreateAdminForm] = useState({
-    fullName: '',
-    mobileNumber: '',
-    email: '',
-    password: '',
-    permanentAddress: '',
-    isTwoFactorEnabled: false,
-  });
-  const [showCreateAdminPassword, setShowCreateAdminPassword] = useState(false);
-  const [isSubmittingCreateAdmin, setIsSubmittingCreateAdmin] = useState(false);
-  const [createAdminError, setCreateAdminError] = useState<string | null>(null);
 
   const fetchStaff = useCallback(async () => {
     if (!token) return;
@@ -108,8 +81,8 @@ export default function StaffSettingsPage() {
       setStaff(data.users || []);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to fetch staff members');
+    } catch (err: unknown) {
+      setErrorMessage(getErrorMessage(err) || 'Failed to fetch staff members');
       setStaff([]);
     } finally {
       setIsLoading(false);
@@ -120,152 +93,19 @@ export default function StaffSettingsPage() {
     void fetchStaff();
   }, [fetchStaff]);
 
-  // Handle Password Reset Submission
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !passwordModalUser) return;
-
-    if (!newPassword || newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters long');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
-    }
-
-    setIsSubmittingPassword(true);
-    setPasswordError(null);
-
-    try {
-      const res = await resetStaffPassword(token, passwordModalUser.id, newPassword);
-      setSuccessMessage(
-        res.message || `Password for ${passwordModalUser.fullName} has been reset successfully.`,
-      );
-      setPasswordModalUser(null);
-      setNewPassword('');
-      setConfirmPassword('');
-      setTimeout(() => setSuccessMessage(null), 5000);
-    } catch (err: any) {
-      setPasswordError(err?.message || 'Failed to reset password');
-    } finally {
-      setIsSubmittingPassword(false);
-    }
+  const handleSuccess = (msg: string) => {
+    setSuccessMessage(msg);
+    void fetchStaff();
+    setTimeout(() => setSuccessMessage(null), 8000);
   };
 
-  // Handle Status Toggle (Activate / Deactivate)
-  const handleToggleStatus = async () => {
-    if (!token || !statusModalUser) return;
-
-    const isSelfTarget = Boolean(
-      currentUser &&
-        (statusModalUser.memberId === currentUser.memberId ||
-          (currentUser.id && statusModalUser.id === currentUser.id)),
+  const handleCreateAdminSuccess = (res: CreateAdminResponse) => {
+    const tempNotice = res.temporaryPassword
+      ? ` Auto-generated temporary password: ${res.temporaryPassword}`
+      : '';
+    handleSuccess(
+      `${res.message || 'Admin account created successfully.'} (ID: ${res.user.memberId}).${tempNotice}`,
     );
-    if (isSelfTarget && statusModalUser.isActive) {
-      setErrorMessage('You cannot deactivate your own super admin account.');
-      setStatusModalUser(null);
-      return;
-    }
-
-    setIsSubmittingStatus(true);
-    try {
-      const nextStatus = !statusModalUser.isActive;
-      const res = await updateStaffStatus(token, statusModalUser.id, nextStatus);
-      setSuccessMessage(
-        res.message ||
-          `Account for ${statusModalUser.fullName} was ${nextStatus ? 'activated' : 'deactivated'}.`,
-      );
-      setStatusModalUser(null);
-      await fetchStaff();
-      setTimeout(() => setSuccessMessage(null), 5000);
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to update account status');
-    } finally {
-      setIsSubmittingStatus(false);
-    }
-  };
-
-  // Handle Settings Edit Submission
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !editSettingsModalUser) return;
-
-    setIsSubmittingSettings(true);
-    setSettingsError(null);
-
-    try {
-      const res = await updateStaffSettings(token, editSettingsModalUser.id, editForm);
-      setSuccessMessage(
-        res.message || `Settings for ${editSettingsModalUser.fullName} updated successfully.`,
-      );
-      setEditSettingsModalUser(null);
-      await fetchStaff();
-      setTimeout(() => setSuccessMessage(null), 5000);
-    } catch (err: any) {
-      setSettingsError(err?.message || 'Failed to update staff settings');
-    } finally {
-      setIsSubmittingSettings(false);
-    }
-  };
-
-  // Handle Create Admin Submission
-  const handleCreateAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-
-    if (!createAdminForm.fullName.trim()) {
-      setCreateAdminError('Full name is required');
-      return;
-    }
-
-    if (!createAdminForm.mobileNumber.trim()) {
-      setCreateAdminError('Mobile number is required');
-      return;
-    }
-
-    if (createAdminForm.password && createAdminForm.password.length < 6) {
-      setCreateAdminError('Password must be at least 6 characters long');
-      return;
-    }
-
-    setIsSubmittingCreateAdmin(true);
-    setCreateAdminError(null);
-
-    try {
-      const res = await createAdmin(token, {
-        fullName: createAdminForm.fullName.trim(),
-        mobileNumber: createAdminForm.mobileNumber.trim(),
-        email: createAdminForm.email.trim() || undefined,
-        password: createAdminForm.password.trim() || undefined,
-        permanentAddress: createAdminForm.permanentAddress.trim() || undefined,
-        isTwoFactorEnabled: createAdminForm.isTwoFactorEnabled,
-      });
-
-      const tempNotice = res.temporaryPassword
-        ? ` Auto-generated temporary password: ${res.temporaryPassword}`
-        : '';
-      setSuccessMessage(
-        `${res.message || 'Admin account created successfully.'} (ID: ${res.user.memberId}).${tempNotice}`,
-      );
-
-      setShowCreateAdminModal(false);
-      setCreateAdminForm({
-        fullName: '',
-        mobileNumber: '',
-        email: '',
-        password: '',
-        permanentAddress: '',
-        isTwoFactorEnabled: false,
-      });
-      await fetchStaff();
-      setTimeout(() => setSuccessMessage(null), 8000);
-    } catch (err: any) {
-      setCreateAdminError(err?.message || 'Failed to create admin account');
-    } finally {
-      setIsSubmittingCreateAdmin(false);
-    }
   };
 
   // Check role: strictly super_admin
@@ -301,10 +141,7 @@ export default function StaffSettingsPage() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             type="button"
-            onClick={() => {
-              setCreateAdminError(null);
-              setShowCreateAdminModal(true);
-            }}
+            onClick={() => setShowCreateAdminModal(true)}
             className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-white bg-[#0A2A5E] hover:bg-[#081f42] rounded-lg transition-colors shadow-sm"
           >
             <UserPlus size={15} />
@@ -380,14 +217,10 @@ export default function StaffSettingsPage() {
           {roleFilter === 'admin' && (
             <button
               type="button"
-              onClick={() => {
-                setCreateAdminError(null);
-                setShowCreateAdminModal(true);
-              }}
+              onClick={() => setShowCreateAdminModal(true)}
               className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
             >
-              <UserPlus size={13} />
-              + Create Admin
+              <UserPlus size={13} />+ Create Admin
             </button>
           )}
         </div>
@@ -444,8 +277,8 @@ export default function StaffSettingsPage() {
               {staff.map((member) => {
                 const isSelf = Boolean(
                   currentUser &&
-                    (member.memberId === currentUser.memberId ||
-                      (currentUser.id && member.id === currentUser.id)),
+                  (member.memberId === currentUser.memberId ||
+                    (currentUser.id && member.id === currentUser.id)),
                 );
                 return (
                   <tr key={member.id} className="hover:bg-gray-50/60 transition-colors">
@@ -532,12 +365,7 @@ export default function StaffSettingsPage() {
                         {/* Reset Password Button */}
                         <button
                           type="button"
-                          onClick={() => {
-                            setPasswordModalUser(member);
-                            setNewPassword('');
-                            setConfirmPassword('');
-                            setPasswordError(null);
-                          }}
+                          onClick={() => setPasswordModalUser(member)}
                           title="Reset Password"
                           className="p-1.5 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors border border-gray-200 hover:border-amber-300"
                         >
@@ -547,17 +375,7 @@ export default function StaffSettingsPage() {
                         {/* Edit Settings Button */}
                         <button
                           type="button"
-                          onClick={() => {
-                            setEditSettingsModalUser(member);
-                            setEditForm({
-                              fullName: member.fullName,
-                              mobileNumber: member.mobileNumber,
-                              email: member.email || '',
-                              role: member.role,
-                              isTwoFactorEnabled: member.isTwoFactorEnabled,
-                            });
-                            setSettingsError(null);
-                          }}
+                          onClick={() => setEditSettingsModalUser(member)}
                           title="Edit Staff Settings"
                           className="p-1.5 text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-gray-200 hover:border-blue-300"
                         >
@@ -623,484 +441,43 @@ export default function StaffSettingsPage() {
         )}
       </div>
 
-      {/* Modal 1: Reset Password Modal */}
+      {/* Extracted Modals */}
       {passwordModalUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
-                  <KeyRound size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-gray-900">Reset Staff Password</h3>
-                  <p className="text-xs text-gray-500">
-                    {passwordModalUser.fullName} ({passwordModalUser.memberId})
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPasswordModalUser(null)}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleResetPassword} className="space-y-4 mt-4">
-              {passwordError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
-                  <AlertTriangle size={14} className="shrink-0" />
-                  <span>{passwordError}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  New Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter at least 6 characters"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                    required
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-type new password"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                  required
-                  minLength={6}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setPasswordModalUser(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingPassword}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#0A2A5E] hover:bg-[#081f42] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isSubmittingPassword && <Loader2 size={14} className="animate-spin" />}
-                  Set New Password
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ResetPasswordModal
+          user={passwordModalUser}
+          token={token}
+          onClose={() => setPasswordModalUser(null)}
+          onSuccess={handleSuccess}
+        />
       )}
 
-      {/* Modal 2: Status Toggle (Activate / Deactivate) Modal */}
       {statusModalUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-3 rounded-full ${
-                  statusModalUser.isActive
-                    ? 'bg-red-50 text-red-600'
-                    : 'bg-green-50 text-green-600'
-                }`}
-              >
-                {statusModalUser.isActive ? <UserX size={24} /> : <UserCheck size={24} />}
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-gray-900">
-                  {statusModalUser.isActive ? 'Deactivate Staff Account' : 'Activate Staff Account'}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {statusModalUser.fullName} ({statusModalUser.memberId})
-                </p>
-              </div>
-            </div>
-
-            <p className="text-sm text-gray-600 mt-4">
-              {statusModalUser.isActive ? (
-                <>
-                  Are you sure you want to deactivate{' '}
-                  <span className="font-semibold text-gray-900">{statusModalUser.fullName}</span>?
-                  This will immediately revoke their ability to log in and access system services.
-                </>
-              ) : (
-                <>
-                  Are you sure you want to reactivate{' '}
-                  <span className="font-semibold text-gray-900">{statusModalUser.fullName}</span>?
-                  They will regain full system access under role{' '}
-                  <span className="font-semibold">{ROLE_LABELS[statusModalUser.role]}</span>.
-                </>
-              )}
-            </p>
-
-            <div className="flex justify-end gap-2.5 mt-6">
-              <button
-                type="button"
-                onClick={() => setStatusModalUser(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isSubmittingStatus}
-                onClick={handleToggleStatus}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 ${
-                  statusModalUser.isActive
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-green-600 hover:bg-green-700'
-                }`}
-              >
-                {isSubmittingStatus && <Loader2 size={14} className="animate-spin" />}
-                {statusModalUser.isActive ? 'Confirm Deactivation' : 'Confirm Activation'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <StatusToggleModal
+          user={statusModalUser}
+          token={token}
+          roleLabels={ROLE_LABELS}
+          onClose={() => setStatusModalUser(null)}
+          onSuccess={handleSuccess}
+          onError={(err) => setErrorMessage(err)}
+        />
       )}
 
-      {/* Modal 3: Edit Staff Settings Modal */}
       {editSettingsModalUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-                  <Settings size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-gray-900">Edit Staff Settings</h3>
-                  <p className="text-xs text-gray-500">
-                    {editSettingsModalUser.fullName} ({editSettingsModalUser.memberId})
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditSettingsModalUser(null)}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveSettings} className="space-y-4 mt-4">
-              {settingsError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
-                  <AlertTriangle size={14} className="shrink-0" />
-                  <span>{settingsError}</span>
-                </div>
-              )}
-
-              {/* Full Name */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={editForm.fullName || ''}
-                  onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                  required
-                />
-              </div>
-
-              {/* Mobile Number */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Mobile Number
-                </label>
-                <input
-                  type="text"
-                  value={editForm.mobileNumber || ''}
-                  onChange={(e) => setEditForm({ ...editForm, mobileNumber: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                  required
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={editForm.email || ''}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  placeholder="Optional email"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                />
-              </div>
-
-              {/* Role */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Staff Role</label>
-                {(() => {
-                  const isEditingSelf = Boolean(
-                    currentUser &&
-                      (editSettingsModalUser.memberId === currentUser.memberId ||
-                        (currentUser.id && editSettingsModalUser.id === currentUser.id)),
-                  );
-                  return (
-                    <>
-                      <select
-                        value={editForm.role || 'admin'}
-                        disabled={isEditingSelf}
-                        onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E] disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      >
-                        <option value="super_admin">Super Admin</option>
-                        <option value="admin">Admin</option>
-                        <option value="owner">Owner</option>
-                        <option value="agent">Agent</option>
-                      </select>
-                      {isEditingSelf && (
-                        <p className="text-[11px] text-amber-600 mt-1">
-                          You cannot alter your own Super Admin role.
-                        </p>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-
-              {/* 2FA Toggle */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div>
-                  <div className="text-xs font-semibold text-gray-800">
-                    Two-Factor Authentication
-                  </div>
-                  <div className="text-[11px] text-gray-500">Require OTP code upon staff login</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={Boolean(editForm.isTwoFactorEnabled)}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, isTwoFactorEnabled: e.target.checked })
-                  }
-                  className="w-4 h-4 text-[#0A2A5E] rounded border-gray-300 focus:ring-[#0A2A5E]"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditSettingsModalUser(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingSettings}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#0A2A5E] hover:bg-[#081f42] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isSubmittingSettings && <Loader2 size={14} className="animate-spin" />}
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <EditSettingsModal
+          user={editSettingsModalUser}
+          currentUser={currentUser}
+          token={token}
+          onClose={() => setEditSettingsModalUser(null)}
+          onSuccess={handleSuccess}
+        />
       )}
 
-      {/* Modal 4: Create Admin Modal */}
       {showCreateAdminModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-purple-50 text-purple-700">
-                  <UserPlus size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-gray-900">Create New Admin</h3>
-                  <p className="text-xs text-gray-500">
-                    Add an administrator with full operations management privileges
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCreateAdminModal(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateAdmin} className="space-y-4 mt-4">
-              {createAdminError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center gap-2">
-                  <AlertTriangle size={14} className="shrink-0" />
-                  <span>{createAdminError}</span>
-                </div>
-              )}
-
-              {/* Full Name */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Operations Officer"
-                  value={createAdminForm.fullName}
-                  onChange={(e) =>
-                    setCreateAdminForm({ ...createAdminForm, fullName: e.target.value })
-                  }
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                  required
-                />
-              </div>
-
-              {/* Mobile Number */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Mobile Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 01712345678"
-                  value={createAdminForm.mobileNumber}
-                  onChange={(e) =>
-                    setCreateAdminForm({ ...createAdminForm, mobileNumber: e.target.value })
-                  }
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                  required
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  placeholder="admin@atbltd.health (optional)"
-                  value={createAdminForm.email}
-                  onChange={(e) =>
-                    setCreateAdminForm({ ...createAdminForm, email: e.target.value })
-                  }
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-gray-700">
-                    Initial Password
-                  </label>
-                  <span className="text-[11px] text-gray-400">Optional</span>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showCreateAdminPassword ? 'text' : 'password'}
-                    placeholder="Leave blank to auto-generate from name & phone"
-                    value={createAdminForm.password}
-                    onChange={(e) =>
-                      setCreateAdminForm({ ...createAdminForm, password: e.target.value })
-                    }
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateAdminPassword(!showCreateAdminPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showCreateAdminPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                <p className="text-[11px] text-gray-500 mt-1">
-                  If left empty, a secure temporary password will be auto-generated and displayed.
-                </p>
-              </div>
-
-              {/* Permanent Address */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  placeholder="Official address or office location (optional)"
-                  value={createAdminForm.permanentAddress}
-                  onChange={(e) =>
-                    setCreateAdminForm({ ...createAdminForm, permanentAddress: e.target.value })
-                  }
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A2A5E]"
-                />
-              </div>
-
-              {/* 2FA Toggle */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div>
-                  <div className="text-xs font-semibold text-gray-800">
-                    Two-Factor Authentication
-                  </div>
-                  <div className="text-[11px] text-gray-500">Require OTP code upon admin login</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={Boolean(createAdminForm.isTwoFactorEnabled)}
-                  onChange={(e) =>
-                    setCreateAdminForm({
-                      ...createAdminForm,
-                      isTwoFactorEnabled: e.target.checked,
-                    })
-                  }
-                  className="w-4 h-4 text-[#0A2A5E] rounded border-gray-300 focus:ring-[#0A2A5E]"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateAdminModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingCreateAdmin}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#0A2A5E] hover:bg-[#081f42] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isSubmittingCreateAdmin && <Loader2 size={14} className="animate-spin" />}
-                  Create Admin
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateAdminModal
+          token={token}
+          onClose={() => setShowCreateAdminModal(false)}
+          onSuccess={handleCreateAdminSuccess}
+        />
       )}
     </div>
   );

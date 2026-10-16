@@ -29,6 +29,23 @@ jobs:
         id: eslint
         run: npm run lint
 
+  format:
+    name: Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Check code formatting (Prettier)
+        run: npm run format:check
+
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
@@ -47,9 +64,42 @@ jobs:
         id: typecheck
         run: npm run typecheck
 
+  audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run production dependency security audit
+        run: npm audit --workspaces --omit=dev --audit-level=high
+      - name: Generate workspace dependency audit artifact (JSON)
+        continue-on-error: true
+        run: npm audit --workspaces --audit-level=high --json > npm-audit-report.json
+      - name: Report dependency freshness across workspaces
+        run: |
+          echo "=== Dependency Freshness Report ==="
+          npm outdated --workspaces || true
+          npm outdated --workspaces --json > npm-outdated-report.json || true
+      - name: Upload dependency audit and freshness artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-reports
+          path: |
+            npm-audit-report.json
+            npm-outdated-report.json
+          if-no-files-found: warn
+
   build:
     name: Build
-    needs: [lint, typecheck]
+    needs: [lint, format, typecheck, audit]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -153,39 +203,6 @@ jobs:
       - name: Tear down migration database
         if: always()
         run: docker compose -f docker-compose.test.yml down -v
-
-  audit:
-    name: Dependency Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Install dependencies
-        run: npm ci
-      - name: Run production dependency security audit
-        run: npm audit --workspaces --omit=dev --audit-level=high
-      - name: Generate workspace dependency audit artifact (JSON)
-        continue-on-error: true
-        run: npm audit --workspaces --audit-level=high --json > npm-audit-report.json
-      - name: Report dependency freshness across workspaces
-        run: |
-          echo "=== Dependency Freshness Report ==="
-          npm outdated --workspaces || true
-          npm outdated --workspaces --json > npm-outdated-report.json || true
-      - name: Upload dependency audit and freshness artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-reports
-          path: |
-            npm-audit-report.json
-            npm-outdated-report.json
-          if-no-files-found: warn
 
   secret-scan:
     name: Secret Scan

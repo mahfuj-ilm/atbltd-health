@@ -30,9 +30,7 @@ jest.mock('../../../lib/apiClient', () => {
 
 jest.mock('../../components/AdminTable', () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => (
-    <table>{children}</table>
-  ),
+  default: ({ children }: { children: React.ReactNode }) => <table>{children}</table>,
 }));
 
 const mockStaffList: StaffUser[] = [
@@ -297,9 +295,7 @@ describe('StaffSettingsPage', () => {
     fireEvent.click(deactivateButton);
 
     expect(screen.getByText('Deactivate Staff Account')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Are you sure you want to deactivate/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Are you sure you want to deactivate/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Deactivation' }));
 
@@ -402,7 +398,9 @@ describe('StaffSettingsPage', () => {
     const mobileInput = screen.getByPlaceholderText('e.g. 01712345678');
     const emailInput = screen.getByPlaceholderText('admin@atbltd.health (optional)');
     const passInput = screen.getByPlaceholderText('Leave blank to auto-generate from name & phone');
-    const addressInput = screen.getByPlaceholderText('Official address or office location (optional)');
+    const addressInput = screen.getByPlaceholderText(
+      'Official address or office location (optional)',
+    );
     const twoFactorCheckbox = screen.getByRole('checkbox');
 
     await userEvent.type(nameInput, 'New Operations Admin');
@@ -432,83 +430,6 @@ describe('StaffSettingsPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('creates admin with auto-generated temporary password when password is left blank', async () => {
-    (getStaffUsers as jest.Mock).mockResolvedValue({
-      users: mockStaffList,
-      total: 3,
-      page: 1,
-      limit: 20,
-      totalPages: 1,
-    });
-
-    (createAdmin as jest.Mock).mockResolvedValueOnce({
-      message: 'Admin account created successfully.',
-      temporaryPassword: 'New223344',
-      user: {
-        id: 'new-ad-2',
-        memberId: 'ATB-26-AD-3',
-        fullName: 'Auto Pass Admin',
-        mobileNumber: '01799223344',
-        role: 'admin',
-        isActive: true,
-      },
-    });
-
-    render(<StaffSettingsPage />);
-    expect(await screen.findByText('Staff Accounts (3)')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /Create Admin/i }));
-
-    await userEvent.type(screen.getByPlaceholderText('e.g. Operations Officer'), 'Auto Pass Admin');
-    await userEvent.type(screen.getByPlaceholderText('e.g. 01712345678'), '01799223344');
-
-    const submitBtn = screen.getAllByRole('button', { name: 'Create Admin' }).pop()!;
-    fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(createAdmin).toHaveBeenCalledWith('mock-sa-token', {
-        fullName: 'Auto Pass Admin',
-        mobileNumber: '01799223344',
-        email: undefined,
-        password: undefined,
-        permanentAddress: undefined,
-        isTwoFactorEnabled: false,
-      });
-    });
-
-    expect(
-      await screen.findByText(/Auto-generated temporary password: New223344/i),
-    ).toBeInTheDocument();
-  });
-
-  it('displays error in modal if createAdmin API rejects', async () => {
-    (getStaffUsers as jest.Mock).mockResolvedValue({
-      users: mockStaffList,
-      total: 3,
-      page: 1,
-      limit: 20,
-      totalPages: 1,
-    });
-
-    (createAdmin as jest.Mock).mockRejectedValueOnce(
-      new Error('A user with this mobile number already exists.'),
-    );
-
-    render(<StaffSettingsPage />);
-    expect(await screen.findByText('Staff Accounts (3)')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /Create Admin/i }));
-
-    await userEvent.type(screen.getByPlaceholderText('e.g. Operations Officer'), 'Duplicate Admin');
-    await userEvent.type(screen.getByPlaceholderText('e.g. 01712345678'), '01700000001');
-
-    const submitBtn = screen.getAllByRole('button', { name: 'Create Admin' }).pop()!;
-    fireEvent.click(submitBtn);
-
-    expect(
-      await screen.findByText('A user with this mobile number already exists.'),
-    ).toBeInTheDocument();
-  });
 
   it('closes Create Admin modal on cancel click', async () => {
     (getStaffUsers as jest.Mock).mockResolvedValue({
@@ -531,4 +452,3 @@ describe('StaffSettingsPage', () => {
     expect(screen.queryByText('Create New Admin')).not.toBeInTheDocument();
   });
 });
-

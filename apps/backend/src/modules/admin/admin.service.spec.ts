@@ -3,12 +3,12 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { User } from '../../entities/user.entity';
-import { Payment, PaymentStatus } from '../../entities/payment.entity';
-import { Claim } from '../../entities/claim.entity';
 import { Agent } from '../../entities/agent.entity';
 import { AuditLog } from '../../entities/audit-log.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { PaymentStatus } from '../../entities/payment.entity';
 import { PaymentVerificationService } from './payment-verification.service';
+import { AdminStatsService } from './admin-stats.service';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -30,25 +30,6 @@ describe('AdminService', () => {
     }),
   };
 
-  const mockPaymentRepository = {
-    findOne: jest.fn(),
-    find: jest.fn(),
-    update: jest.fn(),
-    save: jest.fn(),
-    count: jest.fn(),
-    findAndCount: jest.fn(),
-    createQueryBuilder: jest.fn().mockReturnValue({
-      select: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getRawOne: jest.fn().mockResolvedValue({ total: '5000' }),
-    }),
-  };
-
-  const mockClaimRepository = {
-    count: jest.fn(),
-  };
-
   const mockAgentRepository = {
     findOne: jest.fn(),
     count: jest.fn(),
@@ -66,39 +47,41 @@ describe('AdminService', () => {
     getPendingPayments: jest.fn(),
   };
 
+  const mockAdminStatsService = {
+    getDashboardStats: jest.fn(),
+    getAgentDashboardStats: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
-        { provide: getRepositoryToken(Payment), useValue: mockPaymentRepository },
-        { provide: getRepositoryToken(Claim), useValue: mockClaimRepository },
         { provide: getRepositoryToken(Agent), useValue: mockAgentRepository },
         { provide: getRepositoryToken(AuditLog), useValue: mockAuditLogRepository },
-        {
-          provide: PaymentVerificationService,
-          useValue: mockPaymentVerificationService,
-        },
+        { provide: PaymentVerificationService, useValue: mockPaymentVerificationService },
+        { provide: AdminStatsService, useValue: mockAdminStatsService },
       ],
     }).compile();
 
     service = module.get<AdminService>(AdminService);
-
     jest.clearAllMocks();
   });
 
   describe('getDashboardStats', () => {
-    it('should aggregate counts correctly', async () => {
-      mockUserRepository.count.mockResolvedValue(10);
-      mockPaymentRepository.count.mockResolvedValue(5);
-      mockClaimRepository.count.mockResolvedValue(2);
-      mockAgentRepository.count.mockResolvedValue(4);
+    it('should delegate to AdminStatsService.getDashboardStats', async () => {
+      const mockStats = {
+        members: { total: 10, active: 8, inactive: 2, newThisMonth: 3 },
+        payments: { totalCollection: 5000, pendingVerification: 2, verifiedToday: 1 },
+        claims: { submitted: 4, pending: 1, approved: 2, rejected: 1 },
+        agents: { total: 5, active: 4 },
+      };
+      mockAdminStatsService.getDashboardStats.mockResolvedValueOnce(mockStats);
 
       const stats = await service.getDashboardStats();
 
-      expect(stats.members.total).toBe(10);
-      expect(stats.payments.totalCollection).toBe(5000);
-      expect(stats.agents.total).toBe(4);
+      expect(mockAdminStatsService.getDashboardStats).toHaveBeenCalled();
+      expect(stats).toEqual(mockStats);
     });
   });
 
@@ -155,32 +138,18 @@ describe('AdminService', () => {
   });
 
   describe('getAgentDashboardStats', () => {
-    it('should return zero stats when agent not found', async () => {
-      mockAgentRepository.findOne.mockResolvedValueOnce(null);
+    it('should delegate to AdminStatsService.getAgentDashboardStats', async () => {
+      const mockStats = {
+        members: { total: 10, active: 7 },
+        commissions: { totalEarned: 500, totalPaid: 200 },
+        agents: { total: 3 },
+      };
+      mockAdminStatsService.getAgentDashboardStats.mockResolvedValueOnce(mockStats);
 
       const result = await service.getAgentDashboardStats('user-uuid');
 
-      expect(result.members.total).toBe(0);
-      expect(result.commissions.totalEarned).toBe(0);
-    });
-
-    it('should return agent stats when agent found', async () => {
-      mockAgentRepository.findOne.mockResolvedValueOnce({
-        id: 'agent-uuid',
-        agentCode: 'ATB-26-AG-1',
-        totalCommissionEarned: 500,
-        totalCommissionPaid: 200,
-      });
-      mockUserRepository.count.mockResolvedValueOnce(10);
-      mockUserRepository.count.mockResolvedValueOnce(7);
-      mockAgentRepository.count.mockResolvedValueOnce(3);
-
-      const result = await service.getAgentDashboardStats('user-uuid');
-
-      expect(result.members.total).toBe(10);
-      expect(result.members.active).toBe(7);
-      expect(result.commissions.totalEarned).toBe(500);
-      expect(result.agents.total).toBe(3);
+      expect(mockAdminStatsService.getAgentDashboardStats).toHaveBeenCalledWith('user-uuid');
+      expect(result).toEqual(mockStats);
     });
   });
 
@@ -503,13 +472,7 @@ describe('AdminService', () => {
       });
 
       await expect(
-        service.createAdmin(
-          {
-            fullName: 'Duplicate Mobile',
-            mobileNumber: '01799999999',
-          },
-          'sa-id',
-        ),
+        service.createAdmin({ fullName: 'Duplicate Mobile', mobileNumber: '01799999999' }, 'sa-id'),
       ).rejects.toThrow(ConflictException);
     });
 
