@@ -20,9 +20,10 @@ interface AboutChairmanProps {
     roles: {
       chairman: string;
       director1: string;
+      executiveDirector: string;
+      directorCanvas: string;
       director2: string;
       director3: string;
-      executiveDirector: string;
       advisor1: string;
       advisor2: string;
       career1: string;
@@ -39,9 +40,10 @@ export default function AboutChairman({ strings }: AboutChairmanProps) {
   const currentRoles = [
     { icon: Award, text: strings.roles.chairman },
     { icon: Briefcase, text: strings.roles.director1 },
+    { icon: Award, text: strings.roles.executiveDirector },
+    { icon: Briefcase, text: strings.roles.directorCanvas },
     { icon: Briefcase, text: strings.roles.director2 },
     { icon: Briefcase, text: strings.roles.director3 },
-    { icon: Award, text: strings.roles.executiveDirector },
     { icon: Building2, text: strings.roles.advisor1 },
     { icon: Building2, text: strings.roles.advisor2 },
   ];
