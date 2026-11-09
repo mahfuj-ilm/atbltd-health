@@ -44,12 +44,12 @@
   "devDependencies": {
     "@commitlint/cli": "19.8.1",
     "@commitlint/config-conventional": "19.8.1",
-    "concurrently": "9.2.4",
+    "concurrently": "9.2.5",
     "eslint": "9.39.5",
     "husky": "9.1.7",
     "jest": "30.5.2",
     "lint-staged": "15.5.2",
-    "prettier": "3.9.6",
+    "prettier": "3.9.10",
     "ts-node": "10.9.2",
     "typescript": "5.9.3"
   },
